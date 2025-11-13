@@ -63,9 +63,10 @@ class SheafChainIterator:
             iterable_idxs: List of iterable sheaf indices
             prototype_array: Array of prototype sizes
         """
-        # Handle identity keyword (Ruby: if cross_schema == "identity")
-        if cross_schema == "identity":
-            # Use identity permutation - no changes needed
+        # Handle identity keyword (Ruby: cross = nil, so we won't even get here)
+        # This case is now handled in RuleGroup before calling us
+        if cross_schema is None:
+            # No cross schema - use identity permutation
             return
         
         # Handle variable substitution (Ruby: if cross_schema starts with "{")

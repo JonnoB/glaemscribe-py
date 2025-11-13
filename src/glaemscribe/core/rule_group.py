@@ -470,14 +470,28 @@ class RuleGroup:
             self.add_var(var_name, var_value, is_pointer=True)
             return
         
-        # Check if it's a cross transcription rule (NEW - match Ruby exactly)
+        # Check if it's a cross transcription rule (match Ruby exactly)
         match = self.CROSS_RULE_REGEXP.match(line)
         if match:
             source = match.group(1).strip()
             cross_schema = match.group(2).strip()
             target = match.group(3).strip()
             
-            # Use the proper finalize_rule method with cross schema
+            # Apply variable resolution (match Ruby logic)
+            if cross_schema.startswith("{") and cross_schema.endswith("}"):
+                var_name = cross_schema[1:-1]  # Remove { }
+                if var_name in self.vars:
+                    cross_schema = self.vars[var_name].value
+                else:
+                    # Variable not found - add error
+                    self.mode.errors.append(f"Cross schema variable not found: {var_name}")
+                    return
+            
+            # Handle identity (match Ruby: cross = nil)
+            if cross_schema == "identity":
+                cross_schema = None
+            
+            # Use the proper finalize_rule method with processed cross schema
             self.finalize_rule(line_num, source, target, cross_schema)
             return
         
