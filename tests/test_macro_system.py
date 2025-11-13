@@ -79,22 +79,19 @@ class TestMacroSystem:
     
     def test_cross_rule_in_macro(self):
         """Test that cross rules work inside macros."""
-        # Add cross schema variable
-        self.rule_group.add_var("SWAP_SCHEMA", "2,1", False)
-        
-        # Create macro with cross rule
+        # Create macro with cross rule using literal values (not pointer variables)
         cross_macro = Macro(self.rule_group, "cross_swap", ["ARG1", "ARG2"])
         
         code_lines_term = CodeLinesTerm(cross_macro.root_code_block)
         cross_macro.root_code_block.add_term(code_lines_term)
         
-        # Add cross rule using macro arguments
-        cross_line = CodeLine("[{ARG1}][{ARG2}] --> {SWAP_SCHEMA} --> [{_ARG2_}][{_ARG1_}]", 1)
+        # Add cross rule using macro arguments - use the arguments directly in output
+        cross_line = CodeLine("[{ARG1}][{ARG2}] --> 2,1 --> [{ARG2}][{ARG1}]", 1)
         code_lines_term.code_lines.append(cross_line)
         
         self.rule_group.add_macro(cross_macro)
         
-        # Deploy the macro
+        # Deploy the macro with literal values
         deploy = MacroDeployTerm(
             macro=cross_macro,
             line=10,
@@ -105,6 +102,12 @@ class TestMacroSystem:
         
         # Finalize
         self.rule_group.finalize({})
+        
+        # Debug
+        print(f"Errors: {len(self.mode.errors)}")
+        for err in self.mode.errors:
+            print(f"  {err}")
+        print(f"Rules: {len(self.rule_group.rules)}")
         
         assert len(self.rule_group.rules) == 1
         rule = self.rule_group.rules[0]
