@@ -19,9 +19,10 @@ class TranscriptionProcessor:
     using a tree-based pattern matching algorithm.
     """
     
-    # Constants for word boundaries
-    WORD_BOUNDARY_TREE = "^"  # Start of word marker
-    WORD_BREAKER = "$"         # End of word marker
+    # Constants for word boundaries (match Ruby exactly)
+    WORD_BREAKER = "|"            # Word separator
+    WORD_BOUNDARY_LANG = "_"      # Language boundary  
+    WORD_BOUNDARY_TREE = "\u0000" # Tree boundary (null character)
     
     def __init__(self, mode: Mode):
         """Initialize the processor for a specific mode.
@@ -94,7 +95,7 @@ class TranscriptionProcessor:
         """Build the transcription tree from all rules."""
         self.transcription_tree = TranscriptionTreeNode()
         
-        # Add word boundaries
+        # Add word boundaries (match Ruby exactly)
         self.transcription_tree.add_subpath(self.WORD_BOUNDARY_TREE, [""])
         self.transcription_tree.add_subpath(self.WORD_BREAKER, [""])
         
@@ -168,8 +169,8 @@ class TranscriptionProcessor:
         if not word:
             return []
         
-        # Add word boundaries for matching
-        word_with_boundaries = self.WORD_BOUNDARY_TREE + word + self.WORD_BREAKER
+        # Add word boundaries for matching (match Ruby exactly)
+        word_with_boundaries = self.WORD_BOUNDARY_TREE + word + self.WORD_BOUNDARY_TREE
         
         result = []
         remaining = word_with_boundaries
