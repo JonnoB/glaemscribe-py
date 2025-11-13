@@ -104,6 +104,16 @@ def test_real_mode():
             for warning in mode.warnings[:3]:
                 print(f"  {warning}")
         
+        # Check for rule groups
+        if hasattr(mode, 'rule_groups'):
+            print(f"\nRule groups: {len(mode.rule_groups)}")
+            for name, rg in list(mode.rule_groups.items())[:3]:
+                print(f"  - {name}: {len(rg.vars)} vars, {len(rg.root_code_block.terms)} terms")
+                if rg.vars:
+                    print(f"    Variables: {list(rg.vars.keys())[:3]}")
+        else:
+            print(f"\nNo rule groups found")
+        
         return len(parser.errors) == 0
         
     except Exception as e:
