@@ -82,26 +82,33 @@ class TestTranscription:
         """Test transcription with a simple custom mode."""
         # This test uses a minimal mode to test basic transcription
         from src.glaemscribe.core.mode_enhanced import Mode
-        from src.glaemscribe.core.rule_group import RuleGroup
+        from src.glaemscribe.core.rule_group import RuleGroup, CodeLine, CodeLinesTerm
         from src.glaemscribe.core.transcription_processor import TranscriptionProcessor
         
         mode = Mode("simple_test")
         processor = TranscriptionProcessor(mode)
         
-        # Add simple rule group
+        # Add simple rule group with rules in code block (proper architecture)
         rule_group = RuleGroup(mode, "test_group")
-        rule_group.finalize({})
         
-        # Add simple rule
-        rule_group.finalize_rule(1, "a", "A")
-        rule_group.finalize_rule(1, "b", "B")
+        # Add rules to the code block (not directly to rules list)
+        code_lines_term = CodeLinesTerm(
+            parent_code_block=rule_group.root_code_block,
+            code_lines=[
+                CodeLine("a --> A", 1),
+                CodeLine("b --> B", 2)
+            ]
+        )
+        rule_group.root_code_block.add_term(code_lines_term)
         
         processor.add_rule_group("test_group", rule_group)
-        processor.finalize({})
+        processor.finalize({})  # Now finalize will process code blocks into rules
         
         # Test transcription
         result = processor.transcribe("ab")
-        assert result == "AB"
+        # transcribe() returns a list of tokens, join them
+        result_str = "".join(result)
+        assert result_str == "AB"
 
 
 class TestErrorHandling:
