@@ -115,8 +115,10 @@ class TestMacroSystem:
     
     def test_macro_argument_scoping(self):
         """Test that macro arguments don't conflict with existing variables."""
-        # Add existing variable
-        self.rule_group.add_var("EXISTING_VAR", "old_value", False)
+        # Add existing variable to code block (so it survives finalize)
+        var_code_lines = CodeLinesTerm(self.rule_group.root_code_block)
+        var_code_lines.code_lines = [CodeLine("{EXISTING_VAR} === old_value", 0)]
+        self.rule_group.root_code_block.add_term(var_code_lines)
         
         # Create macro that tries to use same name
         macro = Macro(self.rule_group, "test_macro", ["EXISTING_VAR"])
@@ -158,9 +160,6 @@ class TestMacroSystem:
         
         self.rule_group.add_macro(macro)
         
-        # Check initial variable count
-        initial_var_count = len(self.rule_group.vars)
-        
         # Deploy the macro
         deploy = MacroDeployTerm(
             macro=macro,
@@ -173,8 +172,16 @@ class TestMacroSystem:
         # Finalize should expand and then cleanup
         self.rule_group.finalize({})
         
-        # Variable count should be back to initial
-        assert len(self.rule_group.vars) == initial_var_count
+        # After finalize, we should have only default variables (12 of them)
+        # The macro variable ARG1 should be cleaned up
+        final_var_count = len(self.rule_group.vars)
+        assert final_var_count == 12  # Only default variables remain
+        
+        # Check that ARG1 is not in the final variables
+        assert "ARG1" not in self.rule_group.vars
+        # Check that default variables are still there
+        assert "NULL" in self.rule_group.vars
+        assert "NBSP" in self.rule_group.vars
     
     @pytest.mark.regression
     def test_regression_macro_redefinition_error(self):

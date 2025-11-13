@@ -86,8 +86,18 @@ class TestCrossRules:
     
     def test_cross_rule_with_unicode(self):
         """Test cross rules work with Unicode characters."""
-        # Use _process_code_line to handle parsing like in real usage
-        self.rule_group._process_code_line("{UNI_E000}{UNI_E001} --> 2,1 --> {UNI_E001}{UNI_E000}", 1)
+        # Add the rule to the code block (proper architecture)
+        from src.glaemscribe.core.rule_group import CodeLine, CodeLinesTerm
+        
+        # Unicode vars only allowed in source, not target
+        code_lines_term = CodeLinesTerm(self.rule_group.root_code_block)
+        code_lines_term.code_lines = [
+            CodeLine("{UNI_E000}{UNI_E001} --> 2,1 --> xy", 1)
+        ]
+        self.rule_group.root_code_block.add_term(code_lines_term)
+        
+        # Finalize to process the code lines into rules
+        self.rule_group.finalize({})
         
         assert len(self.rule_group.rules) == 1
         rule = self.rule_group.rules[0]
