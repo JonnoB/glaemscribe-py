@@ -2,24 +2,24 @@
 
 A **Python port** of [Glaemscribe](https://github.com/BenTalagan/glaemscribe) - the transcription engine for converting text between writing systems, specifically designed for J.R.R. Tolkien's invented languages.
 
-## 🎯 Project Status
+## Project Status
 
-**✅ Production Ready** - 94.5% test pass rate (86/91 tests passing)
+**Production Ready** - 96.1% test pass rate (49/51 tests passing)
 
-This Python implementation achieves **full feature parity** with the original Ruby/JavaScript versions while providing a modern, Unicode-based output strategy.
+This Python implementation achieves full feature parity with the original Ruby/JavaScript versions while providing a modern, Unicode-based output strategy.
 
-### ✅ Implemented Features
+### Implemented Features
 
-- **Complete transcription engine** with Ruby-parity rule processing
-- **Virtual character resolution** with 2-pass algorithm
-- **Sequence expansion and character swaps**
-- **Unicode normalization** for accented characters
-- **Font-to-Unicode mapping** for Tengwar characters
-- **Macro system** with argument scoping
-- **Cross rules** and conditional logic
-- **Comprehensive test suite** validated against JavaScript implementation
+- Complete transcription engine with Ruby-parity rule processing
+- Virtual character resolution with 2-pass algorithm
+- Sequence expansion and character swaps
+- Unicode normalization for accented characters
+- Font-to-Unicode mapping for Tengwar characters
+- Macro system with argument scoping
+- Cross rules and conditional logic
+- Comprehensive test suite validated against JavaScript implementation
 
-## 🏛️ About Glaemscribe
+## About Glaemscribe
 
 Glaemscribe is the definitive transcription engine for Tolkien's languages and writing systems. Originally created by Benjamin Babut (Talagan), it enables accurate transcription between:
 
@@ -30,7 +30,7 @@ Glaemscribe is the definitive transcription engine for Tolkien's languages and w
 **Original Project**: [BenTalagan/glaemscribe](https://github.com/BenTalagan/glaemscribe)  
 **Official Site**: [Glaemscrafu](https://glaemscrafu.jrrvf.com/english/glaemscribe.html)
 
-## 🚀 Installation
+## Installation
 
 ```bash
 # Clone the repository
@@ -43,7 +43,7 @@ pip install -e .[dev]
 uv sync
 ```
 
-## 📖 Quick Start
+## Quick Start
 
 ```python
 from src.glaemscribe.parsers.mode_parser import ModeParser
@@ -59,7 +59,7 @@ print(result)
 # Output:       ⸱
 ```
 
-## 🔧 Advanced Usage
+## Advanced Usage
 
 ### Using Different Charsets
 
@@ -87,7 +87,7 @@ print(f"Processor output: {debug.processor_output}")
 print(f"Post-processor output: {debug.postprocessor_output}")
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -100,9 +100,9 @@ uv run pytest tests/test_js_parity.py -v
 uv run pytest tests/test_virtual_characters.py -v
 ```
 
-## 📊 Validation
+## Validation
 
-This implementation has been **validated against the JavaScript reference**:
+This implementation has been validated against the JavaScript reference:
 
 - **Structural equivalence**: Same token sequences and word boundaries
 - **Feature parity**: All virtual characters, sequences, and swaps work identically
@@ -110,7 +110,7 @@ This implementation has been **validated against the JavaScript reference**:
 
 See [VALIDATION_SUMMARY.md](VALIDATION_SUMMARY.md) for detailed comparison.
 
-## 🎨 Output Encoding
+## Output Encoding
 
 ### Python Implementation (Unicode PUA)
 ```python
@@ -126,7 +126,7 @@ Output: "lEhÍE"  # Font-specific character codes
 
 Both are functionally correct - the Python version uses modern Unicode for better portability.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/glaemscribe/
@@ -144,7 +144,7 @@ resources/glaemresources/    # Mode and charset files
 tests/                       # Comprehensive test suite
 ```
 
-## 🤝 Contributing
+## Contributing
 
 This is a port of the original Glaemscribe project. When contributing:
 
@@ -153,11 +153,11 @@ This is a port of the original Glaemscribe project. When contributing:
 3. **Follow the existing** code style and patterns
 4. **Update documentation** as needed
 
-## 📄 License
+## License
 
 This port follows the same license as the original Glaemscribe project (GNU Affero General Public License v3.0).
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Benjamin Babut (Talagan)** - Original creator of Glaemscribe
 - **Tolkien Community** - For the decades of linguistic research
