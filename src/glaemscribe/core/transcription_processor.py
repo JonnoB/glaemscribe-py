@@ -63,13 +63,32 @@ class TranscriptionProcessor:
         self._build_transcription_tree()
     
     def _build_input_charset(self):
-        """Build mapping of input characters to rule groups."""
+        """Build mapping of input characters to rule groups.
+        
+        This matches the Ruby implementation exactly:
+        @in_charset = {}
+        rule_groups.each{ |rgname, rg| 
+          rg.in_charset.each{ |char, group|
+            group_for_char = @in_charset[char]
+            if group_for_char
+              mode.errors << Glaeml::Error.new(-1,"Group #{rgname} uses input character #{char} which is also used by group #{group_for_char.name}. Input charsets should not intersect between groups.") 
+            else
+              @in_charset[char] = group
+            end
+          }
+        }
+        """
         self.in_charset = {}
         
-        for rule_group in self.rule_groups.values():
-            # TODO: Get the input charset from the rule group
-            # For now, we'll skip this as it requires rule implementation
-            pass
+        for rg_name, rule_group in self.rule_groups.items():
+            for char, group in rule_group.in_charset.items():
+                group_for_char = self.in_charset.get(char)
+                if group_for_char:
+                    # Character conflict - add error to mode
+                    from ..parsers.glaeml import Error
+                    self.mode.errors.append(Error(-1, f"Group {rg_name} uses input character '{char}' which is also used by group {group_for_char.name}. Input charsets should not intersect between groups."))
+                else:
+                    self.in_charset[char] = group
     
     def _build_transcription_tree(self):
         """Build the transcription tree from all rules."""

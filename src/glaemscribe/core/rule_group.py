@@ -265,17 +265,20 @@ class RuleGroup:
         if_term.conds.append(if_cond)
         return if_cond
     
-    def finalize(self, transcription_options: Dict[str, str]):
-        """Finalize the rule group by processing all code blocks and extracting variables/rules.
+    def finalize(self, transcription_options: Dict[str, Any]):
+        """Finalize the rule group by processing all code blocks.
         
-        This matches the Ruby/JS implementation exactly.
+        This matches the Ruby finalize method exactly.
+        
+        Args:
+            transcription_options: Current transcription options
         """
-        # Reset all data structures (like Ruby/JS)
+        # Reset state
         self.vars = {}
         self.in_charset = {}
         self.rules = []
         
-        # Add default variables (like Ruby/JS)
+        # Add default variables (match Ruby)
         self.add_var("NULL", "", False)
         
         # Characters that are not easily entered or visible in a text editor
@@ -293,8 +296,36 @@ class RuleGroup:
         self.add_var("LBRACKET", "{UNI_5B}", False)
         self.add_var("RBRACKET", "{UNI_5D}", False)
         
-        # Process the entire tree (like Ruby/JS)
+        # Process all code blocks to extract variables and rules
         self.descend_if_tree(self.root_code_block, transcription_options)
+        
+        # Build the input charset from all finalized rules
+        self._build_input_charset()
+    
+    def _build_input_charset(self):
+        """Build the input charset from all finalized rules.
+        
+        This matches the Ruby implementation exactly:
+        rules.each{ |r| 
+          r.sub_rules.each { |sr|
+            sr.src_combination.join("").split(//).each{ |inchar|
+              @in_charset[inchar] = self if inchar != WORD_BREAKER && inchar != WORD_BOUNDARY_TREE
+            }
+          }
+        }
+        """
+        from ..core.transcription_processor import TranscriptionProcessor
+        
+        for rule in self.rules:
+            for sub_rule in rule.sub_rules:
+                # Join the source combination and split into individual characters
+                src_string = "".join(sub_rule.src_combination)
+                for inchar in src_string:
+                    # Add the character to the map of input characters
+                    # Ignore word breaker and boundary characters
+                    if (inchar != TranscriptionProcessor.WORD_BREAKER and 
+                        inchar != TranscriptionProcessor.WORD_BOUNDARY_TREE):
+                        self.in_charset[inchar] = self
     
     def descend_if_tree(self, code_block: CodeBlock, trans_options: Dict[str, Any]):
         """Process a code block and all its terms, handling conditionals.
