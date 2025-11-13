@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Any, Union
 
 from .charset import Charset
 from .mode_debug_context import ModeDebugContext
+from .post_processor import TranscriptionPostProcessor
 
 
 @dataclass
@@ -74,10 +75,10 @@ class Mode:
         self.latest_option_values: Dict[str, str] = {}
         self._last_raw_options: Optional[Dict] = None
         
-        # Processors (will be implemented later)
+        # Processors
         self.pre_processor: Optional[Any] = None
         self.processor: Optional[Any] = None
-        self.post_processor: Optional[Any] = None
+        self.post_processor = TranscriptionPostProcessor(self)
         
         # Additional metadata
         self.raw_mode_name: Optional[str] = None
@@ -138,7 +139,10 @@ class Mode:
     def add_charset(self, charset: Charset, is_default: bool = False):
         """Add a supported charset."""
         self.supported_charsets[charset.name] = charset
-        if is_default or self.default_charset is None:
+        if is_default:
+            self.default_charset = charset
+        elif self.default_charset is None:
+            # Only set as default if no default exists yet
             self.default_charset = charset
     
     def add_option(self, option: Option):
@@ -185,11 +189,13 @@ class Mode:
             # Apply processor
             line_result = self.processor.transcribe(line, debug_context)
             
-            # Convert tokens to string
-            line_str = ' '.join(line_result)
+            # Apply post-processor to convert tokens to Unicode characters
+            # This is the critical step that converts "TELCO" → actual Tengwar chars
+            line_str = self.post_processor.apply(line_result, target_charset)
             
             # Add debug output
             debug_context.processor_output.extend(line_result)
+            debug_context.postprocessor_output += line_str + "\n"
             
             # Restore line feed if needed
             if restore_lf:

@@ -12,6 +12,7 @@ import os
 
 from .glaeml import Parser, Document, Node, Error
 from ..core.charset import Charset as CoreCharset
+from .tengwar_font_mapping import map_font_code_to_unicode
 
 
 @dataclass
@@ -24,8 +25,9 @@ class Char:
     charset: 'CharsetParser' = field(repr=False)
     
     def __post_init__(self):
-        """Convert code point to string."""
-        self.str_value = chr(self.code)
+        """Convert code point to Unicode character using font mapping."""
+        # Use font mapping for Tengwar characters to match Ruby implementation
+        self.str_value = map_font_code_to_unicode(self.code)
 
 
 @dataclass
@@ -123,18 +125,9 @@ class CharsetParser:
             return
         
         try:
-            # Parse code point (can be hex like 0x61, 10C, a0, or decimal)
+            # Parse code point - ALWAYS treat as hexadecimal (like Ruby .hex and JS parseInt(...,16))
             code_str = char_element.args[0]
-            
-            # Handle different hex formats
-            if code_str.startswith('0x') or code_str.startswith('0X'):
-                code = int(code_str, 16)
-            elif any(c in 'abcdefABCDEF' for c in code_str):
-                # Contains hex digits, treat as hex
-                code = int(code_str, 16)
-            else:
-                # Pure decimal
-                code = int(code_str)
+            code = int(code_str, 16)  # Always base 16, matching Ruby and JS behavior
             
             # Get character names (everything after the code point)
             names = [name.strip() for name in char_element.args[1:] if name.strip() and name.strip() != '?']

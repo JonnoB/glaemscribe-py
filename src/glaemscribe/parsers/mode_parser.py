@@ -13,6 +13,7 @@ import re
 from .glaeml import Parser, Document, Node, Error
 from ..core.mode_enhanced import Mode, Option
 from ..core.charset import Charset
+from .charset_parser import CharsetParser
 from ..core.rule_group import RuleGroup, CodeLine, CodeBlock, CodeLinesTerm
 from ..core.transcription_processor import TranscriptionProcessor
 
@@ -157,7 +158,7 @@ class ModeParser:
                 self.mode.add_option(option)
     
     def _extract_charsets(self, doc: Document):
-        """Extract charset references."""
+        """Extract charset references and load charset files."""
         charset_nodes = doc.root_node.gpath("charset")
         
         for charset_element in charset_nodes:
@@ -167,10 +168,23 @@ class ModeParser:
             charset_name = charset_element.args[0]
             is_default = len(charset_element.args) > 1 and charset_element.args[1] == "true"
             
-            # For now, create a placeholder charset
-            # In a full implementation, we'd use ResourceManager to load it
-            placeholder_charset = Charset(name=charset_name, version="1.0.0")
-            self.mode.add_charset(placeholder_charset, is_default)
+            # Load the actual charset file
+            charset_file = f"resources/glaemresources/charsets/{charset_name}.cst"
+            
+            try:
+                charset_parser = CharsetParser()
+                loaded_charset = charset_parser.parse(charset_file)
+                self.mode.add_charset(loaded_charset, is_default)
+                    
+            except FileNotFoundError:
+                # Fallback to placeholder if file not found
+                print(f"Warning: Charset file {charset_file} not found, using placeholder")
+                placeholder_charset = Charset(name=charset_name, version="1.0.0")
+                self.mode.add_charset(placeholder_charset, is_default)
+            except Exception as e:
+                print(f"Error loading charset {charset_file}: {e}")
+                placeholder_charset = Charset(name=charset_name, version="1.0.0")
+                self.mode.add_charset(placeholder_charset, is_default)
         
         # Add warning if no default charset
         if not self.mode.default_charset:
