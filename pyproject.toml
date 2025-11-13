@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glaemscribe"
+version = "0.1.0"
+description = "Python implementation of Glaemscribe transcription engine"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Glaemscribe Team"},
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=6.0", "pytest-cov>=2.0", "black", "mypy", "flake8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --cov=glaemscribe --cov-report=term-missing"
