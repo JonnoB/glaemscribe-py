@@ -24,7 +24,7 @@ class RegexPatterns:
     RULE_REGEXP = re.compile(r'^\s*(.*?)\s+-->\s+(.+?)\s*$')
     
     CROSS_SCHEMA_REGEXP = re.compile(r'[0-9]+(\s*,\s*[0-9]+)*')
-    CROSS_RULE_REGEXP = re.compile(r'^\s*(.*?)\s+-->\s+([0-9]+(\s*,\s*[0-9]+)*|{[0-9A-Z_]+}|identity)\s+-->\s+(.+?)\s*$')
+    CROSS_RULE_REGEXP = re.compile(r'^\s*(.*?)\s+-->\s+([0-9]+(?:\s*,\s*[0-9]+)*|{[0-9A-Z_]+}|identity)\s+-->\s+(.+?)\s*$')
 
 
 @dataclass
@@ -470,23 +470,25 @@ class RuleGroup:
             self.add_var(var_name, var_value, is_pointer=True)
             return
         
-        # Check if it's a transcription rule
+        # Check if it's a cross transcription rule (NEW - match Ruby exactly)
+        match = self.CROSS_RULE_REGEXP.match(line)
+        if match:
+            source = match.group(1).strip()
+            cross_schema = match.group(2).strip()
+            target = match.group(3).strip()
+            
+            # Use the proper finalize_rule method with cross schema
+            self.finalize_rule(line_num, source, target, cross_schema)
+            return
+        
+        # Check if it's a normal transcription rule
         match = self.RULE_REGEXP.match(line)
         if match:
             source = match.group(1).strip()
             target = match.group(2).strip()
             
-            # Apply variable substitution to both source and target
-            resolved_source = self._resolve_variables(source, line_num)
-            resolved_target = self._resolve_variables(target, line_num)
-            
-            if resolved_source and resolved_target:
-                rule = {
-                    'source': resolved_source,
-                    'target': resolved_target,
-                    'line': line_num
-                }
-                self.rules.append(rule)
+            # Use the proper finalize_rule method without cross schema
+            self.finalize_rule(line_num, source, target)
             return
     
     def _resolve_variables(self, expression: str, line_num: int) -> Optional[str]:
