@@ -160,6 +160,10 @@ class Parser:
         parent.name = block_type
         parent.type = NodeType.ELEMENT_BLOCK
         
+        # Remove the first argument after using it for the name (matches Ruby behavior)
+        if parent.args:
+            parent.args = parent.args[1:]
+        
         while self.line_number < len(self.lines):
             line = self.lines[self.line_number]
             

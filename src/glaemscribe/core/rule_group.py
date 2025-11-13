@@ -6,10 +6,23 @@ rules, and conditional logic.
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union, Any, Pattern
+from typing import Dict, List, Optional, Union, Any
 import re
 
-from ..parsers.glaeml import Error
+from ..parsers.glaeml import Node, Error
+
+
+class RegexPatterns:
+    VAR_NAME_REGEXP = re.compile(r'{([0-9A-Z_]+)}')
+    UNICODE_VAR_NAME_REGEXP_IN = re.compile(r'^UNI_([0-9A-F]+)$')
+    UNICODE_VAR_NAME_REGEXP_OUT = re.compile(r'{UNI_([0-9A-F]+)}')
+    
+    VAR_DECL_REGEXP = re.compile(r'^\s*{([0-9A-Z_]+)}\s+===\s+(.+?)\s*$')
+    POINTER_VAR_DECL_REGEXP = re.compile(r'^\s*{([0-9A-Z_]+)}\s+<=>\s+(.+?)\s*$')
+    RULE_REGEXP = re.compile(r'^\s*(.*?)\s+-->\s+(.+?)\s*$')
+    
+    CROSS_SCHEMA_REGEXP = re.compile(r'[0-9]+(\s*,\s*[0-9]+)*')
+    CROSS_RULE_REGEXP = re.compile(r'^\s*(.*?)\s+-->\s+([0-9]+(\s*,\s*[0-9]+)*|{[0-9A-Z_]+}|identity)\s+-->\s+(.+?)\s*$')
 
 
 @dataclass
@@ -88,16 +101,22 @@ class IfCond:
 
 
 class RuleGroup:
-    """A group of transcription rules with variables and conditions."""
+    """A group of transcription rules with variables and conditional logic.
     
-    # Regular expressions for parsing
-    VAR_NAME_REGEXP: Pattern = re.compile(r'{([0-9A-Z_]+)}')
-    UNICODE_VAR_NAME_REGEXP_IN: Pattern = re.compile(r'^UNI_([0-9A-F]+)$')
-    UNICODE_VAR_NAME_REGEXP_OUT: Pattern = re.compile(r'{UNI_([0-9A-F]+)}')
+    This mirrors the Ruby RuleGroup class implementation.
+    """
     
-    VAR_DECL_REGEXP: Pattern = re.compile(r'^\s*{([0-9A-Z_]+)}\s+===\s+(.+?)\s*$')
-    POINTER_VAR_DECL_REGEXP: Pattern = re.compile(r'^\s*{([0-9A-Z_]+)}\s+<=>\s+(.+?)\s*$')
-    RULE_REGEXP: Pattern = re.compile(r'^\s*(.*?)\s+-->\s+(.+?)\s*$')
+    # Use the regex patterns
+    VAR_NAME_REGEXP = RegexPatterns.VAR_NAME_REGEXP
+    UNICODE_VAR_NAME_REGEXP_IN = RegexPatterns.UNICODE_VAR_NAME_REGEXP_IN
+    UNICODE_VAR_NAME_REGEXP_OUT = RegexPatterns.UNICODE_VAR_NAME_REGEXP_OUT
+    
+    VAR_DECL_REGEXP = RegexPatterns.VAR_DECL_REGEXP
+    POINTER_VAR_DECL_REGEXP = RegexPatterns.POINTER_VAR_DECL_REGEXP
+    RULE_REGEXP = RegexPatterns.RULE_REGEXP
+    
+    CROSS_SCHEMA_REGEXP = RegexPatterns.CROSS_SCHEMA_REGEXP
+    CROSS_RULE_REGEXP = RegexPatterns.CROSS_RULE_REGEXP
     
     def __init__(self, mode, name: str):
         """Initialize a rule group."""
@@ -244,19 +263,129 @@ class RuleGroup:
         if_term.conds.append(if_cond)
         return if_cond
     
-    def finalize(self, trans_options: Dict[str, Any]):
-        """Finalize the rule group with given transcription options.
+    def finalize(self, transcription_options: Dict[str, str]):
+        """Finalize the rule group by processing all code blocks and extracting variables/rules.
         
-        This processes all the code lines and conditional blocks to build
-        the final set of rules.
+        This matches the Ruby/JS implementation exactly.
         """
-        if not hasattr(self, 'rules'):
-            self.rules = []
+        # Reset all data structures (like Ruby/JS)
+        self.vars = {}
+        self.in_charset = {}
+        self.rules = []
         
-        # Only process if we have code blocks (parsed from file)
-        if hasattr(self, 'root_code_block') and self.root_code_block.terms:
-            self._process_code_block(self.root_code_block, trans_options)
-            self._process_code_block(self.root_code_block, trans_options)
+        # Add default variables (like Ruby/JS)
+        self.add_var("NULL", "", False)
+        
+        # Characters that are not easily entered or visible in a text editor
+        self.add_var("NBSP", "{UNI_A0}", False)
+        self.add_var("WJ", "{UNI_2060}", False)
+        self.add_var("ZWSP", "{UNI_200B}", False)
+        self.add_var("ZWNJ", "{UNI_200C}", False)
+        
+        # The following characters are used by the mode syntax
+        self.add_var("UNDERSCORE", "{UNI_5F}", False)
+        self.add_var("ASTERISK", "{UNI_2A}", False)
+        self.add_var("COMMA", "{UNI_2C}", False)
+        self.add_var("LPAREN", "{UNI_28}", False)
+        self.add_var("RPAREN", "{UNI_29}", False)
+        self.add_var("LBRACKET", "{UNI_5B}", False)
+        self.add_var("RBRACKET", "{UNI_5D}", False)
+        
+        # Process the entire tree (like Ruby/JS)
+        self.descend_if_tree(self.root_code_block, transcription_options)
+    
+    def descend_if_tree(self, code_block: CodeBlock, trans_options: Dict[str, Any]):
+        """Process a code block and all its terms, handling conditionals.
+        
+        This matches the Ruby/JS descend_if_tree implementation.
+        
+        Args:
+            code_block: The code block to process
+            trans_options: Current transcription options
+        """
+        for term in code_block.terms:
+            if isinstance(term, CodeLinesTerm):
+                # Process all code lines in this term
+                for code_line in term.code_lines:
+                    self.finalize_code_line(code_line)
+            
+            elif isinstance(term, IfTerm):
+                # Process conditional blocks
+                for if_cond in term.conds:
+                    if self._evaluate_condition(if_cond.expression, trans_options):
+                        # This condition is true, process its child block
+                        self.descend_if_tree(if_cond.child_code_block, trans_options)
+                        break  # Only process first true condition
+    
+    def finalize_code_line(self, code_line: CodeLine):
+        """Process a single code line and extract variables or rules.
+        
+        This matches the Ruby/JS finalize_code_line implementation.
+        
+        Args:
+            code_line: The code line to process
+        """
+        expression = code_line.expression.strip()
+        
+        # Skip empty lines and comments
+        if not expression or expression.startswith('**'):
+            return
+        
+        # Check for variable declaration
+        if self.VAR_DECL_REGEXP.match(expression):
+            match = self.VAR_DECL_REGEXP.match(expression)
+            var_name = match.group(1)
+            var_value = match.group(2)
+            self.add_var(var_name, var_value, False)
+            return
+        
+        # Check for cross rule
+        if self.CROSS_RULE_REGEXP.match(expression):
+            match = self.CROSS_RULE_REGEXP.match(expression)
+            source = match.group(1)
+            cross = match.group(2)
+            target = match.group(3)
+            self.finalize_rule(code_line.line, source, target, cross)
+            return
+        
+        # Check for regular rule
+        if self.RULE_REGEXP.match(expression):
+            match = self.RULE_REGEXP.match(expression)
+            source = match.group(1)
+            target = match.group(2)
+            self.finalize_rule(code_line.line, source, target, None)
+            return
+        
+        # Unknown expression
+        self.mode.errors.append(Error(code_line.line, f"Cannot understand: {expression}"))
+    
+    def finalize_rule(self, line: int, match_exp: str, replacement_exp: str, cross_schema: Optional[str] = None):
+        """Create and finalize a rule.
+        
+        This matches the Ruby/JS finalize_rule implementation.
+        
+        Args:
+            line: Line number
+            match_exp: Source expression
+            replacement_exp: Target expression
+            cross_schema: Cross schema if applicable
+        """
+        # Apply variable substitutions
+        match = self.apply_vars(line, match_exp, True)
+        replacement = self.apply_vars(line, replacement_exp, False)
+        
+        if match is None or replacement is None:
+            return  # Failed to resolve variables
+        
+        # Create rule
+        rule = {
+            'line': line,
+            'source': match,
+            'target': replacement,
+            'cross_schema': cross_schema
+        }
+        
+        self.rules.append(rule)
     
     def _process_code_block(self, code_block: CodeBlock, trans_options: Dict[str, Any]):
         """Process a code block and extract rules.
