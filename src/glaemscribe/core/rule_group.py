@@ -563,6 +563,106 @@ class RuleGroup:
         
         return False
     
+    def apply_vars(self, line: int, string: str, allow_unicode_vars: bool = False) -> Optional[str]:
+        """Replace all variables in an expression with their values.
+        
+        This matches the Ruby apply_vars implementation exactly.
+        
+        Args:
+            line: Line number for error reporting
+            string: The string to process
+            allow_unicode_vars: Whether to allow Unicode variables
+            
+        Returns:
+            The processed string, or None if there was an error
+        """
+        ret = string
+        stack_depth = 0
+        had_replacements = True
+        
+        while had_replacements:
+            had_replacements = False
+            
+            def replace_var(match):
+                nonlocal had_replacements
+                vname = match.group(1)
+                v = self.vars.get(vname)
+                
+                if not v:
+                    # Check if it's a Unicode variable
+                    if self.UNICODE_VAR_NAME_REGEXP_IN.match(vname):
+                        if allow_unicode_vars:
+                            # Keep Unicode variable intact for later processing
+                            return match.group(0)
+                        else:
+                            self.mode.errors.append(Error(
+                                line, 
+                                f"In expression: {string}: making wrong use of unicode variable: {match.group(0)}. Unicode vars can only be used in source members of a rule or in the definition of another variable."
+                            ))
+                            had_replacements = True
+                            return None
+                    else:
+                        self.mode.errors.append(Error(
+                            line,
+                            f"In expression: {string}: failed to evaluate variable: {match.group(0)}."
+                        ))
+                        had_replacements = True
+                        return None
+                else:
+                    had_replacements = True
+                    return v.value
+            
+            # Apply variable replacement
+            ret = self.VAR_NAME_REGEXP.sub(replace_var, ret)
+            
+            if ret is None:
+                return None
+            
+            stack_depth += 1
+            if not had_replacements:
+                break
+                
+            if stack_depth > 16:
+                self.mode.errors.append(Error(
+                    line,
+                    f"In expression: {string}: evaluation stack overflow."
+                ))
+                return None
+        
+        # Handle Unicode variable resolution if allowed
+        if allow_unicode_vars:
+            def replace_unicode(match):
+                hex_code = match.group(1)
+                try:
+                    # Validate hex code format
+                    if not all(c in '0123456789ABCDEFabcdef' for c in hex_code):
+                        self.mode.errors.append(Error(
+                            line,
+                            f"Invalid Unicode hex code format: {hex_code}"
+                        ))
+                        return match.group(0)
+                    
+                    # Convert to integer and validate range
+                    code_point = int(hex_code, 16)
+                    if code_point > 0x10FFFF:  # Unicode limit
+                        self.mode.errors.append(Error(
+                            line,
+                            f"Unicode code point out of range: {hex_code}"
+                        ))
+                        return match.group(0)
+                    
+                    return chr(code_point)
+                except ValueError:
+                    self.mode.errors.append(Error(
+                        line,
+                        f"Invalid Unicode hex code: {hex_code}"
+                    ))
+                    return match.group(0)
+            
+            ret = self.UNICODE_VAR_NAME_REGEXP_OUT.sub(replace_unicode, ret)
+        
+        return ret
+    
     def __str__(self) -> str:
         """String representation of the rule group."""
         return f"<RuleGroup {self.name}: {len(self.vars)} vars, {len(self.rules)} rules>"
