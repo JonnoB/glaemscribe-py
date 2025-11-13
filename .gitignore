@@ -76,5 +76,4 @@ Thumbs.db
 
 # Project specific
 *.log
-test_*.py
-simple_test.py
+

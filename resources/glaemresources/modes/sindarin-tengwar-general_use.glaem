@@ -1,0 +1,410 @@
+\**
+
+Glǽmscribe (also written Glaemscribe) is a software dedicated to
+the transcription of texts between writing systems, and more 
+specifically dedicated to the transcription of J.R.R. Tolkien's 
+invented languages to some of his devised writing systems.
+
+Copyright (C) 2015 Benjamin Babut (Talagan).
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+**\
+
+\** Sindarin Classical mode for glaemscribe (MAY BE INCOMPLETE) **\
+
+\beg changelog
+  \entry "0.0.2" "Fixed some tehtar versions which did not look quite nice for ch, dh, v, mb. Reworked the problem of labialized consonnants (+w), adding an option for treating the u-curl + tehta combination."
+  \entry "0.0.3" "Extended the labialized consonnants option."
+  \entry "0.0.4" "Fixed nw (BUG : was using ORE from the beleriand mode), added lw"
+  \entry "0.0.5" "Added thorn as equivalent for th"
+  \entry "0.0.6" "Porting to virtual chars to simplify and beautify"
+  \entry "0.0.7" "Added charset support for Annatar"
+  \entry "0.0.8" "Added support for the FreeMonoTengwar font" 
+  \entry "0.1.0" "Added support for the Tengwar Elfica font"
+  \entry "0.1.1" "Added support for inlined raw tengwar"  
+  \entry "0.1.2" "Added support for non-breaking spaces"  
+  \entry "0.1.3" "Added support for new unicode charsets"   
+  \entry "0.1.4" "Added support for the Tengwar Telcontar font"
+  \entry "0.1.5" "Added a few labial exotic combinations. Reworked median point behaviour, and ng."
+  \entry "0.1.6" "Added gasdil handling."
+\end
+
+\language "Sindarin"
+\writing  "Tengwar"
+\mode     "Sindarin Tengwar - General Use"
+\version  "0.1.6"
+\authors  "J.R.R. Tolkien, impl. Talagan (Benjamin Babut)"
+
+\world      arda
+\invention  jrrt
+
+\charset  tengwar_ds_sindarin true
+\charset  tengwar_ds_parmaite false
+\charset  tengwar_ds_eldamar  false
+\charset  tengwar_ds_annatar  false
+\charset  tengwar_ds_elfica   false
+
+\charset  tengwar_guni_sindarin false
+\charset  tengwar_guni_parmaite false
+\charset  tengwar_guni_eldamar  false
+\charset  tengwar_guni_annatar  false
+\charset  tengwar_guni_elfica   false
+
+\charset  tengwar_freemono    false
+\charset  tengwar_telcontar   false
+
+\raw_mode "raw-tengwar"
+
+\beg      options
+
+  \beg option reverse_o_u_tehtar U_UP_O_DOWN
+    \value O_UP_U_DOWN 1
+    \value U_UP_O_DOWN 2
+  \end
+
+  \beg option apostrophe APOSTROPHE_IGNORED
+    \value APOSTROPHE_IGNORED 0
+    \value APOSTROPHE_GASDIL  1
+  \end
+  
+  \beg option hyphen HYPHEN_WORD_BREAKER
+    \value HYPHEN_WORD_BREAKER  0
+    \value HYPHEN_WORD_JOINER   1
+  \end
+
+  \beg option consonant_modification_style CONSONANT_MODIFICATION_STYLE_BAR
+    \value CONSONANT_MODIFICATION_STYLE_WAVE 0
+    \value CONSONANT_MODIFICATION_STYLE_BAR 1
+  \end
+
+  \beg option labialized_consonants_u_curl LABIALIZED_U_CURL_ALWAYS
+    \value    LABIALIZED_U_CURL_NONE      1
+    \value    LABIALIZED_U_CURL_NO_TEHTAR 2
+    \value    LABIALIZED_U_CURL_ALWAYS    3
+  \end
+
+  \option reverse_numbers true
+  \beg option numbers_base BASE_12
+    \value    BASE_10 10
+    \value    BASE_12 12
+  \end
+
+\end
+
+\beg preprocessor
+  \** Work exclusively downcase **\
+  \downcase
+  
+  \if "hyphen == HYPHEN_WORD_JOINER"
+    \** Replace hyphen by median point **\
+    \substitute "-" "·"  
+  \else
+    \** Replace hyphen by glaemscribe's word breaker **\
+    \substitute "-" "|"
+  \endif
+  
+  \** Add keyboard friendly word joiner **\
+  \substitute "*" "·"
+  
+  \** Simplify trema vowels **\
+  \substitute ä a
+  \substitute ë e
+  \substitute ï i
+  \substitute ö o
+  \substitute ü u
+  \substitute ÿ y
+
+  \** We should do better for that one (todo) **\
+  \substitute œ e
+  
+  \** Dis-ambiguate long vowels **\
+  \rxsubstitute "(ā|â|aa)" "á"
+  \rxsubstitute "(ē|ê|ee)" "é"
+  \rxsubstitute "(ī|î|ii)" "í"
+  \rxsubstitute "(ō|ô|oo)" "ó"
+  \rxsubstitute "(ū|û|uu)" "ú"
+  \rxsubstitute "(ȳ|ŷ|yy)" "ý"
+  
+  \** Special case of starting 'i' before vowels, replace i by j **\     
+  \rxsubstitute "\\bi([aeouyáāâéēêíīîóōôúūûýȳŷ])" "j\\1"
+  
+  \** Special case for ng : before the vast majority of consonnants, treat as ŋ **\
+  \** Don't include r / l / lh / w **\
+  \rxsubstitute "ng([tpckbdfðvnmhs])" "ŋ\\1"
+  
+  \** Avoid mutated ng of being treated as strong middle word n|g (ex : i·ngelaidh [iŋɛlaið] ) **\
+  \substitute "·ng" "·ŋ"  
+  \** But avoid losing the strong g in nasal mutation of g (ex : in·Gelydh [iŋgɛlyð]] ) **\
+  \substitute "n·g" "·ŋg"
+  \** Use median dot as word joiner **\
+  \substitute "·" ""
+  
+  \** Preprocess numbers **\
+  \elvish_numbers "\\eval numbers_base" "\\eval reverse_numbers"
+\end
+ 
+\beg processor
+
+  \beg rules litteral
+    
+    \if "consonant_modification_style == CONSONANT_MODIFICATION_STYLE_WAVE"
+      {GEMINATE} === GEMINATE_SIGN_TILD
+      {NASAL}    === NASALIZE_SIGN_TILD
+    \else
+      {GEMINATE} === GEMINATE_SIGN
+      {NASAL}    === NASALIZE_SIGN
+    \endif
+    
+    \if "reverse_o_u_tehtar == U_UP_O_DOWN"
+      {O_LOOP}        === O_TEHTA
+      {U_LOOP}        === U_TEHTA
+     \else
+      {O_LOOP}        === U_TEHTA
+      {U_LOOP}        === O_TEHTA
+    \endif
+    
+    \** VOWELS **\
+    {A}   === a
+    {AA}  === á
+    {E}   === e
+    {EE}  === é
+    {I}   === i
+    {II}  === í
+    {O}   === o
+    {OO}  === ó
+    {U}   === u
+    {UU}  === ú
+    {Y}   === y
+    {YY}  === ý
+
+    {AE}  === {A}{E}
+    {AI}  === {A}{I}
+    {AU}  === {A}{U}
+    {AW}  === {A}w
+    {EI}  === {E}{I}
+    {OE}  === {O}{E}
+    {UI}  === {U}{I}
+
+    \** CONSONANTS **\
+    {K}         === (c,k)
+
+    {VOWELS}    === {A}             * {E}             * {I}           * {O}         * {U}         * {Y} 
+    {LVOWELS}   === {AA}            * {EE}            * {II}          * {OO}        * {UU}        * {YY}   
+
+    {TEHTAR}    === A_TEHTA         * E_TEHTA         * I_TEHTA       * {O_LOOP}     * {U_LOOP}     * Y_TEHTA 
+  
+    {_LTEHTAR_} === ARA A_TEHTA     * ARA E_TEHTA     * ARA I_TEHTA   * ARA {O_LOOP} * ARA {U_LOOP} * ARA Y_TEHTA 
+
+    {DIPHTHONGS}   === {AI}            * {AU}            * {AW}            * {EI}            * {UI}         * {AE}          * {OE}              
+    {_DIPHTHONGS_} === ANNA A_TEHTA    * VALA A_TEHTA    * VALA A_TEHTA    * ANNA E_TEHTA    * ANNA {U_LOOP} * YANTA A_TEHTA * YANTA {O_LOOP}     
+
+    \** Consonants + Vowels, we will often need these ones **\
+    {V_D}         === [ {VOWELS} ]
+    {V_D_WN}      === [ {VOWELS} * {NULL} ]
+
+    {_V_D_}       === [ {TEHTAR} ]
+    {_V_D_WN_}    === [ {TEHTAR} * {NULL} ]
+ 
+    \** Vowel rules **\  
+    [{VOWELS}]      -->   TELCO [{TEHTAR}]  \** Replace isolated short vowels **\
+    [{LVOWELS}]     -->   [{_LTEHTAR_}]   \** Replace long vowels **\
+    [{DIPHTHONGS}]  -->   [{_DIPHTHONGS_}]    \** Replace diphthongs **\
+   
+    \** 1ST LINE **\
+    {L1}           === t     * p * {K}
+    {_L1_}         === TINCO * PARMA * QUESSE
+ 
+    {V_D_WN}[{L1}] --> 2,1 --> [{_L1_}]{_V_D_WN_}
+  
+    {V_D_WN}nt   --> TINCO {NASAL} {_V_D_WN_}
+    {V_D_WN}mp   --> PARMA {NASAL} {_V_D_WN_}
+    {V_D_WN}n{K} --> CALMA {NASAL} {_V_D_WN_}
+
+    \** 2ND LINE **\
+    \** 
+        /ŋg/ : this is ng in middle of words + might be found at word start. 
+        See also final/initial ng_ / _ng below 
+    **\
+    {L2}        === d     * b     * g     * (ng,ngg,ŋg,ñg)              
+    {_L2_}      === ANDO  * UMBAR * UNGWE * UNGWE {NASAL}      
+
+    {V_D_WN}[{L2}] --> 2,1 --> [{_L2_}]{_V_D_WN_}
+
+    {V_D_WN}mb   --> UMBAR  {NASAL} {_V_D_WN_}
+    {V_D_WN}nd   --> ANDO   {NASAL} {_V_D_WN_}
+
+    \** 3RD LINE **\
+    {L3}    === (þ,th) * (f,ph,ff) * ch 
+    {_L3_}  === SULE   * FORMEN * HWESTA
+
+    {V_D_WN}[{L3}] --> 2,1 --> [{_L3_}]{_V_D_WN_} 
+   
+    {V_D_WN}nth   --> SULE   {NASAL} {_V_D_WN_}
+    {V_D_WN}mph   --> FORMEN {NASAL} {_V_D_WN_}
+    {V_D_WN}nf    --> FORMEN {NASAL} {_V_D_WN_}
+    {V_D_WN}nch   --> HWESTA {NASAL} {_V_D_WN_}
+
+    \** 4TH LINE **\
+    {L4}        === (đ,ð,ðh,dh)   * (v,bh,f_) \** Some noldorin variants here ... **\
+    {_L4_}      === ANTO          * AMPA 
+
+    {V_D_WN}[{L4}] --> 2,1 --> [{_L4_}]{_V_D_WN_}
+
+    \** 5TH LINE **\
+    {L5}        === n     *   m       * (_ng,ng_,ŋ,ñ)   * _mh  \** weak ng at initial and final **\
+    {_L5_}      === NUMEN *   MALTA   * NWALME          * MALTA_W_HOOK 
+
+    {V_D_WN}[{L5}] --> 2,1 --> [{_L5_}]{_V_D_WN_}
+
+    {V_D_WN}nn        --> NUMEN {NASAL} {_V_D_WN_}
+    {V_D_WN}mm        --> MALTA {NASAL} {_V_D_WN_}
+
+    \** 6TH LINE **\
+
+    \** 7TH LINE **\
+    {L7}        === r_    * r     * l     * ll               * w     
+    {_L7_}      === ORE   * ROMEN * LAMBE * LAMBE {GEMINATE} * VALA
+        
+    {V_D_WN}[{L7}] --> 2,1 --> [{_L7_}]{_V_D_WN_}
+    
+    _rh --> ARDA
+    _lh --> ALDA
+
+    \** S/Z LINE **\
+    {L8}    === s * y * ss
+    {_L8_}  === SILME_NUQUERNA * SILME_NUQUERNA_ALT * ESSE_NUQUERNA 
+
+    {V_D_WN}[{L8}]  --> 2,1 --> [{_L8_}]{_V_D_WN_}
+
+    {V_D_WN}ns      --> SILME_NUQUERNA {NASAL} {_V_D_WN_}
+
+    s --> SILME
+
+    \** OTHERS **\
+    j --> YANTA
+
+    {V_D_WN}h    --> HYARMEN {_V_D_WN_}
+    {V_D_WN}hw   --> HWESTA_SINDARINWA {_V_D_WN_}
+
+    \** 
+        Ok here come the labialized consonants which are really tricky
+        The fonts generally do not handle well the wa-tehta curl + tehtar, this should be one more argument for
+        adopting open type anchors with which we can stack diacritics (see the sarati modes).
+        For here, we cheat. Either we don't have any tehta on the tengwa, and it's easy.
+        Or, we put the two signs in their small versions, side by side.
+        We give an option not to use that trick, if the option is not set, we simply do not use
+        the wa-tehta curl at all when there's a tehta on the tengwa.
+    **\
+    
+    \if "labialized_consonants_u_curl == LABIALIZED_U_CURL_NO_TEHTAR || labialized_consonants_u_curl == LABIALIZED_U_CURL_ALWAYS"
+      bw   --> UMBAR WA_TEHTA
+      dw   --> ANDO  WA_TEHTA  
+      gw   --> UNGWE WA_TEHTA  
+      lw   --> LAMBE WA_TEHTA
+      nw   --> NUMEN WA_TEHTA   
+      rw   --> ROMEN WA_TEHTA   
+      (ng,ngg,ŋg,ñg)w --> UNGWE {NASAL} WA_TEHTA
+      (_ng,ng_,ŋ,ñ)w  --> NWALME WA_TEHTA
+    \endif
+
+    \if "labialized_consonants_u_curl == LABIALIZED_U_CURL_ALWAYS"    
+      {V_D}bw               --> UMBAR WA_TEHTA {_V_D_}
+      {V_D}dw               --> ANDO  WA_TEHTA {_V_D_}
+      {V_D}gw               --> UNGWE WA_TEHTA {_V_D_}
+      {V_D}lw               --> LAMBE WA_TEHTA {_V_D_}   
+      {V_D}nw               --> NUMEN WA_TEHTA {_V_D_}
+      {V_D}rw               --> ROMEN WA_TEHTA {_V_D_}
+      {V_D}(ng,ngg,ŋg,ñg)w  --> UNGWE {NASAL} WA_TEHTA {_V_D_}
+      {V_D}(_ng,ng_,ŋ,ñ)w   --> NWALME WA_TEHTA {_V_D_}
+    \endif
+    
+    \if "apostrophe == APOSTROPHE_IGNORED"
+      ' --> {NULL}
+      ’ --> {NULL}
+    \else
+      \** use gasdil **\
+      ' --> HALLA
+      ’ --> HALLA
+    \endif
+    
+    \** Forced gasdil **\
+    ° --> HALLA
+  \end
+  
+  \beg rules punctuation
+    . --> PUNCT_DDOT
+    .. --> PUNCT_DOT PUNCT_DDOT PUNCT_DOT
+    ... --> PUNCT_TILD
+    …   --> PUNCT_TILD
+    .... --> PUNCT_TILD
+    ..... --> PUNCT_TILD
+    ...... --> PUNCT_TILD
+    ....... --> PUNCT_TILD
+    
+    , --> PUNCT_DOT
+    : --> PUNCT_DOT
+    ; --> PUNCT_DOT
+    ! --> PUNCT_EXCLAM
+    ? --> PUNCT_INTERR
+    · --> {NULL}
+
+    - --> {NULL} 
+    – --> PUNCT_TILD  
+    — --> PUNCT_TILD
+    
+    \** NBSP **\
+    {NBSP} --> NBSP
+    
+    \** Quotes **\
+
+    “ --> DQUOT_OPEN
+    ” --> DQUOT_CLOSE
+    « --> DQUOT_OPEN 
+    » --> DQUOT_CLOSE 
+
+    [ --> PUNCT_PAREN_L
+    ] --> PUNCT_PAREN_R
+    ( --> PUNCT_PAREN_L
+    ) --> PUNCT_PAREN_R
+    { --> PUNCT_PAREN_L
+    } --> PUNCT_PAREN_R
+    < --> PUNCT_PAREN_L
+    > --> PUNCT_PAREN_R
+
+    \** Not universal between fonts ... **\
+    $ --> ELVISH_PAREN
+    ≤ --> RING_MARK_L \** Ring inscription left beautiful stuff **\
+    ≥ --> RING_MARK_R \** Ring inscription right beautiful stuff **\
+  \end
+
+  \beg rules numbers
+    0 --> NUM_0
+    1 --> NUM_1
+    2 --> NUM_2
+    3 --> NUM_3
+    4 --> NUM_4
+    5 --> NUM_5
+    6 --> NUM_6
+    7 --> NUM_7
+    8 --> NUM_8
+    9 --> NUM_9
+    A --> NUM_10
+    B --> NUM_11      
+  \end
+\end
+
+\beg postprocessor
+  \resolve_virtuals
+\end
