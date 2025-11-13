@@ -133,6 +133,10 @@ class RuleGroup:
         """Add a variable to the rule group."""
         self.vars[var_name] = RuleGroupVar(var_name, value, is_pointer)
     
+    def add_macro(self, macro):
+        """Add a macro to the rule group."""
+        self.macros[macro.name] = macro
+    
     def apply_vars(self, line: int, string: str, allow_unicode_vars: bool = False) -> Optional[str]:
         """Apply variable substitutions to a string.
         
@@ -328,7 +332,7 @@ class RuleGroup:
                         self.in_charset[inchar] = self
     
     def descend_if_tree(self, code_block: CodeBlock, trans_options: Dict[str, Any]):
-        """Process a code block and all its terms, handling conditionals.
+        """Process a code block and all its terms, handling conditionals and macros.
         
         This matches the Ruby/JS descend_if_tree implementation.
         
@@ -342,6 +346,10 @@ class RuleGroup:
                 for code_line in term.code_lines:
                     self.finalize_code_line(code_line)
             
+            elif hasattr(term, 'is_macro_deploy') and term.is_macro_deploy():
+                # Handle macro deployment
+                self._deploy_macro(term, trans_options)
+            
             elif isinstance(term, IfTerm):
                 # Process conditional blocks
                 for if_cond in term.conds:
@@ -349,6 +357,70 @@ class RuleGroup:
                         # This condition is true, process its child block
                         self.descend_if_tree(if_cond.child_code_block, trans_options)
                         break  # Only process first true condition
+    
+    def _deploy_macro(self, macro_deploy, trans_options: Dict[str, Any]):
+        """Deploy a macro with its arguments.
+        
+        This matches the Ruby macro deployment implementation.
+        
+        Args:
+            macro_deploy: The MacroDeployTerm to process
+            trans_options: Current transcription options
+        """
+        macro = macro_deploy.macro
+        line = macro_deploy.line
+        
+        # Add macro backtrace for error reporting
+        from ..parsers.glaeml import Error
+        backtrace_error = Error(line, f">> Macro backtrace : {macro.name}")
+        self.mode.errors.append(backtrace_error)
+        
+        # First, test if variables can be pushed (check for conflicts)
+        arg_values = []
+        for i, arg_name in enumerate(macro.arg_names):
+            var_value = None
+            
+            if arg_name in self.vars:
+                self.mode.errors.append(Error(
+                    line, 
+                    f"Local variable {arg_name} hinders a variable with the same name in this context. Use only local variable names in macros!"
+                ))
+                var_value = None
+            else:
+                # Evaluate local variable
+                if i < len(macro_deploy.arg_value_expressions):
+                    var_value_ex = macro_deploy.arg_value_expressions[i]
+                    var_value = self.apply_vars(line, var_value_ex, True)
+                    
+                    if not var_value:
+                        self.mode.errors.append(Error(
+                            line,
+                            f"Thus, variable {{{arg_name}}} could not be declared."
+                        ))
+            
+            arg_values.append({'name': arg_name, 'val': var_value})
+        
+        # Push local vars after the whole loop to avoid interferences
+        for v in arg_values:
+            if v['val'] is not None:
+                self.add_var(v['name'], v['val'], False)
+        
+        # Execute the macro's code block
+        self.descend_if_tree(macro.root_code_block, trans_options)
+        
+        # Remove the local vars from the scope
+        for v in arg_values:
+            if v['val'] is not None:
+                if v['name'] in self.vars:
+                    del self.vars[v['name']]
+        
+        # Handle error backtrace cleanup
+        if self.mode.errors and self.mode.errors[-1] == backtrace_error:
+            # Remove the error scope if there were no errors
+            self.mode.errors.pop()
+        else:
+            # Add another one to close the context
+            self.mode.errors.append(Error(line, f"<< Macro backtrace : {macro.name}"))
     
     def finalize_code_line(self, code_line: CodeLine):
         """Process a single code line and extract variables or rules.

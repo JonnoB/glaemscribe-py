@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union, Any, Callable
 import os
+import re
 
 from .glaeml import Parser, Document, Node, Error
 from ..core.mode_enhanced import Mode, Option
@@ -244,9 +245,82 @@ class ModeParser:
                     lcount += 1
         
         def process_element(parent_block: CodeBlock, element: Node):
-            """Process element nodes."""
-            # Handle other element types (macros, etc.)
-            self.errors.append(Error(element.line, f"Unknown directive {element.name}."))
+            """Process element nodes - handles macros, conditionals, etc."""
+            
+            if element.name == 'macro':
+                # Handle macro definition: \beg macro name arg1 arg2
+                if not element.args or len(element.args) < 1:
+                    self.errors.append(Error(element.line, "Macro misses a name."))
+                    return
+                
+                macro_args = element.args.copy()
+                macro_name = macro_args.pop(0)
+                
+                # Validate argument names
+                for arg in macro_args:
+                    if not re.match(r'[0-9A-Z_]+', arg):
+                        self.errors.append(Error(element.line, f"Macro argument name {arg} has wrong format."))
+                        return
+                
+                # Check for macro redefinition
+                if macro_name in rule_group.macros:
+                    self.errors.append(Error(element.line, f"Redefining macro {macro_name}."))
+                    return
+                
+                # Create macro object
+                from ..core.macro import Macro
+                macro = Macro(rule_group, macro_name, macro_args)
+                
+                # Process macro content
+                macro_context = {
+                    'owner': macro,
+                    'root_element': element,
+                    'rule_group': rule_group
+                }
+                macro.traverse_if_tree(element, process_text, process_element)
+                
+                # Store the macro
+                rule_group.add_macro(macro)
+                
+            elif element.name == 'deploy':
+                # Handle macro deployment: \deploy macro_name arg1 arg2
+                if not element.args or len(element.args) < 1:
+                    self.errors.append(Error(element.line, "Deploy misses a macro name."))
+                    return
+                
+                deploy_args = element.args.copy()
+                macro_name = deploy_args.pop(0)
+                macro = rule_group.macros.get(macro_name)
+                
+                if not macro:
+                    self.errors.append(Error(element.line, f"Macro '{macro_name}' not found in rule group '{rule_group.name}'."))
+                    return
+                
+                # Check argument count
+                expected_args = len(macro.arg_names)
+                given_args = len(deploy_args)
+                if expected_args != given_args:
+                    self.errors.append(Error(element.line, f"Macro '{macro_name}' takes {expected_args} arguments, not {given_args}."))
+                    return
+                
+                # Create macro deployment term
+                from ..core.macro import MacroDeployTerm
+                macro_deploy = MacroDeployTerm(
+                    macro=macro,
+                    line=element.line,
+                    parent_code_block=parent_block,
+                    arg_value_expressions=deploy_args
+                )
+                parent_block.add_term(macro_deploy)
+                
+            elif element.name in ['if', 'elsif', 'else', 'endif']:
+                # Handle conditional elements - these should be processed by traverse_if_tree
+                # But we need to let the existing infrastructure handle them
+                pass
+                
+            else:
+                # Unknown element
+                self.errors.append(Error(element.line, f"Unknown directive {element.name}."))
         
         # Use the traverse_if_tree method to handle conditionals
         rule_group.traverse_if_tree(element, process_text, process_element)
