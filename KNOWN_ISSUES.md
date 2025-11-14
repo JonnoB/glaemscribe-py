@@ -23,6 +23,17 @@
 **Impact**: Warnings in test output, but tests run fine  
 **Status**: Cosmetic issue - tests work correctly
 
+### Slow Test Performance
+**Priority**: Medium  
+**Files**: All test files  
+**Description**: Tests are taking ~1.6 seconds each, total test suite takes ~60 seconds  
+**Impact**: Slow development feedback loop, discourages running tests frequently  
+**Status**: Need to investigate what's causing the slowdown (likely mode loading)  
+**Potential Solutions**: 
+- Cache mode loading between tests
+- Use pytest fixtures for shared setup
+- Profile test execution to find bottlenecks
+
 ## 📝 TODO List
 
 ### High Priority
@@ -34,6 +45,8 @@
 - [ ] **Add more test cases** for edge cases and complex virtual character scenarios
 - [ ] **Document API** with proper docstrings and examples
 - [ ] **Add support for custom charsets** and user-defined modes
+- [ ] **Optimize test performance** - reduce test suite from 60s to under 30s
+- [ ] **Profile test execution** to identify bottlenecks in mode loading
 
 ### Low Priority
 - [ ] **Register custom pytest marks** to eliminate warnings
