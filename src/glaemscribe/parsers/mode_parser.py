@@ -191,10 +191,18 @@ class ModeParser:
             self.mode.warnings.append(Error(0, "No default charset defined!!"))
     
     def _extract_preprocessor(self, doc: Document):
-        """Extract preprocessor rules."""
+        """Extract preprocessor rules.
+        
+        TODO: Full implementation should parse all preprocessor operators
+        from the mode file and create operator instances. For now, we just
+        ensure the preprocessor exists but don't populate it with operators.
+        The mode_enhanced.py applies basic lowercasing which is sufficient
+        for most Quenya/Sindarin modes.
+        """
         preprocessor_nodes = doc.root_node.gpath("preprocessor")
-        # TODO: Implement preprocessor parsing
-        # For now, we'll skip this as it's complex
+        # Preprocessor operators like \downcase, \substitute, \rxsubstitute
+        # should be parsed here and added to self.mode.pre_processor.operators
+        # This requires implementing PreProcessorOperator subclasses for each type
     
     def _extract_processor_rules(self, doc: Document):
         """Extract processor rules."""

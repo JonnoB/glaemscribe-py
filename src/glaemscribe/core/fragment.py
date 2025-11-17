@@ -62,22 +62,24 @@ class Fragment:
         """Parse a single equivalence.
         
         Args:
-            eq: Equivalence string like "(a,ä)" or "h"
+            eq: Equivalence string like "(a,ä)" or "h" or "YANTA A_TEHTA"
             
         Returns:
-            Parsed equivalence structure
+            Parsed equivalence structure: list of alternatives, each alternative is a list of tokens
         """
         match = self.EQUIVALENCE_RX_IN.match(eq)
         if match:
-            # Handle parenthesized equivalence: (a,ä)
+            # Handle parenthesized equivalence: (a,ä) or (YANTA A_TEHTA, URE A_TEHTA)
             inner = match.group(1)
             parts = inner.split(self.EQUIVALENCE_SEPARATOR, -1)
+            # Each part is an alternative; split each alternative into tokens
             return [
                 [self._finalize_fragment_leaf(leaf.strip()) for leaf in part.split()]
                 for part in parts
             ]
         else:
-            # Handle simple equivalence: h
+            # Handle simple equivalence: h or "YANTA A_TEHTA"
+            # This is a single alternative with one or more tokens
             return [[self._finalize_fragment_leaf(leaf.strip()) for leaf in eq.split()]]
     
     def _finalize_fragment_leaf(self, leaf: str) -> str:
@@ -130,36 +132,33 @@ class Fragment:
     def _generate_combinations(self, equivalences: List[List[List[str]]]):
         """Generate all combinations from equivalences using Cartesian product.
         
+        Matches JS logic: equivalences[0] is combined with equivalences[1], etc.
+        Each alternative is a list of tokens that are concatenated together.
+        
         Args:
-            equivalences: Parsed equivalences
+            equivalences: Parsed equivalences - list of equivalence groups,
+                         each group is a list of alternatives,
+                         each alternative is a list of tokens
         """
         if not equivalences:
             self.combinations = [[""]]
             return
         
-        # Start with first equivalence
-        current = equivalences[0]
+        # Start with first equivalence group (JS: res = fragment.equivalences[0])
+        result = equivalences[0]
         
-        # Generate combinations using iterative approach
-        result = []
-        for first_equiv in current:
-            # Handle nested lists in first_equiv
-            if isinstance(first_equiv[0], list):
-                # Flatten nested structure
-                first_options = []
-                for nested in first_equiv:
-                    first_options.extend(nested)
-            else:
-                first_options = first_equiv
+        # Combine with each subsequent equivalence group (JS: productizeArray)
+        for i in range(len(equivalences) - 1):
+            next_equiv = equivalences[i + 1]
+            new_result = []
             
-            for first_token in first_options:
-                if len(equivalences) == 1:
-                    result.append([first_token])
-                else:
-                    # Recursively combine with rest
-                    rest_combinations = self._generate_rest_combinations(equivalences[1:])
-                    for rest_combo in rest_combinations:
-                        result.append([first_token] + rest_combo)
+            # Cartesian product: combine each alternative from result with each from next_equiv
+            for x in result:
+                for y in next_equiv:
+                    # Concatenate token lists (JS: x.concat(y))
+                    new_result.append(x + y)
+            
+            result = new_result
         
         self.combinations = result
     

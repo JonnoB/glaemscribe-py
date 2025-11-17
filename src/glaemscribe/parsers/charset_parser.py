@@ -26,8 +26,14 @@ class Char:
     
     def __post_init__(self):
         """Convert code point to Unicode character using font mapping."""
-        # Use font mapping for Tengwar characters to match Ruby implementation
-        self.str_value = map_font_code_to_unicode(self.code)
+        # Unicode PUA codes (>= 0xE000) are direct Unicode mappings
+        # Legacy font codes (< 0xE000) need font mapping conversion
+        if self.code >= 0xE000:
+            # Direct Unicode mapping for Unicode-native charsets (like FreeMono)
+            self.str_value = chr(self.code)
+        else:
+            # Use font mapping for legacy font-specific character codes
+            self.str_value = map_font_code_to_unicode(self.code)
 
 
 @dataclass

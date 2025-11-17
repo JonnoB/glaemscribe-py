@@ -425,10 +425,17 @@ class RuleGroup:
             # Add another one to close the context
             self.mode.errors.append(Error(line, f"<< Macro backtrace : {macro.name}"))
     
+    @staticmethod
+    def strip_inline_comments(text: str) -> str:
+        """Remove inline comments \\** ... **\\ from text."""
+        import re
+        # Match \** followed by anything until **\ (non-greedy)
+        return re.sub(r'\\?\*\*.*?\*\*\\?', '', text)
+    
     def finalize_code_line(self, code_line: CodeLine):
         """Process a single code line and extract variables or rules.
         
-        This matches the Ruby/JS finalize_code_line implementation.
+        This matches the JS finalize_code_line implementation.
         
         Args:
             code_line: The code line to process
@@ -439,24 +446,50 @@ class RuleGroup:
         if not expression or expression.startswith('**'):
             return
         
-        # Check for variable declaration
+        # Strip inline comments before processing
+        expression = self.strip_inline_comments(expression)
+        
+        # Check for variable declaration (JS: VAR_DECL_REGEXP)
         if self.VAR_DECL_REGEXP.match(expression):
             match = self.VAR_DECL_REGEXP.match(expression)
             var_name = match.group(1)
-            var_value = match.group(2)
+            var_value_ex = match.group(2)
+            # Resolve variables in the value (JS: apply_vars)
+            var_value = self.apply_vars(code_line.line, var_value_ex, True)
+            if var_value is None:
+                self.mode.errors.append(Error(code_line.line, f"Thus, variable {{{var_name}}} could not be declared."))
+                return
             self.add_var(var_name, var_value, False)
             return
         
-        # Check for cross rule
+        # Check for pointer variable declaration (JS: POINTER_VAR_DECL_REGEXP)
+        if self.POINTER_VAR_DECL_REGEXP.match(expression):
+            match = self.POINTER_VAR_DECL_REGEXP.match(expression)
+            var_name = match.group(1)
+            var_value_ex = match.group(2)
+            self.add_var(var_name, var_value_ex, True)
+            return
+        
+        # Check for cross rule (JS: CROSS_RULE_REGEXP)
         if self.CROSS_RULE_REGEXP.match(expression):
             match = self.CROSS_RULE_REGEXP.match(expression)
             source = match.group(1)
             cross = match.group(2)
             target = match.group(3)
+            # Handle variable substitution for cross (JS logic)
+            var_name = match.group(4)
+            if var_name:
+                var_value = self.apply_vars(code_line.line, cross, False)
+                if var_value is None:
+                    self.mode.errors.append(Error(code_line.line, f"Thus, variable {{{var_name}}} could not be declared."))
+                    return
+                cross = var_value
+            if cross == "identity":
+                cross = None
             self.finalize_rule(code_line.line, source, target, cross)
             return
         
-        # Check for regular rule
+        # Check for regular rule (JS: RULE_REGEXP)
         if self.RULE_REGEXP.match(expression):
             match = self.RULE_REGEXP.match(expression)
             source = match.group(1)
@@ -679,7 +712,14 @@ class RuleGroup:
                 option_name = parts[0].strip()
                 expected_value = parts[1].strip().strip('"\'')
                 
-                actual_value = trans_options.get(option_name, '')
+                # Get actual value from trans_options or mode defaults
+                if option_name in trans_options:
+                    actual_value = trans_options[option_name]
+                elif option_name in self.mode.options:
+                    actual_value = self.mode.options[option_name].default_value
+                else:
+                    actual_value = ''
+                
                 return str(actual_value) == expected_value
         
         # Handle "true" literal (for else clauses)
@@ -760,6 +800,44 @@ class RuleGroup:
         # This matches Ruby behavior exactly
         return ret
     
+    def finalize(self, trans_options: Dict[str, Any]):
+        """Finalize the rule group with options, building rules and charset.
+        
+        This matches the JS finalize implementation.
+        
+        Args:
+            trans_options: Transcription options
+        """
+        # Reset containers (JS: vars = {}, in_charset = {}, rules = [])
+        self.vars = {}
+        self.in_charset = {}
+        self.rules = []
+        
+        # Seed built-in variables (JS lines 320–336)
+        self.add_var("NULL", "", False)
+        self.add_var("NBSP", "{UNI_A0}", False)
+        self.add_var("WJ", "{UNI_2060}", False)
+        self.add_var("ZWSP", "{UNI_200B}", False)
+        self.add_var("ZWNJ", "{UNI_200C}", False)
+        self.add_var("UNDERSCORE", "{UNI_5F}", False)
+        self.add_var("ASTERISK", "{UNI_2A}", False)
+        self.add_var("COMMA", "{UNI_2C}", False)
+        self.add_var("LPAREN", "{UNI_28}", False)
+        self.add_var("RPAREN", "{UNI_29}", False)
+        self.add_var("LBRACKET", "{UNI_5B}", False)
+        self.add_var("RBRACKET", "{UNI_5D}", False)
+        
+        # Descend the IF tree to collect rules (JS: descend_if_tree)
+        self.descend_if_tree(self.root_code_block, trans_options)
+        
+        # Build in_charset from generated rules (JS lines 341–358)
+        for rule in self.rules:
+            for sub_rule in rule.sub_rules:
+                for inchar in sub_rule.src_combination:
+                    # Ignore word boundary markers
+                    if inchar != "|" and inchar != "\u0000":
+                        self.in_charset[inchar] = self
+
     def __str__(self) -> str:
         """String representation of the rule group."""
         return f"<RuleGroup {self.name}: {len(self.vars)} vars, {len(self.rules)} rules>"

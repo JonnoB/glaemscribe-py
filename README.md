@@ -100,6 +100,14 @@ uv run pytest tests/test_js_parity.py -v
 uv run pytest tests/test_virtual_characters.py -v
 ```
 
+### Rendering smoke test
+
+Render the same sample text as the Rust bindings using the bundled CSUR font (via the `tengwar` package) for visual comparison:
+
+```bash
+uv run python scripts/render_smoke.py --output glaemscribe_sample.png
+```
+
 ## Validation
 
 This implementation has been validated against the JavaScript reference:

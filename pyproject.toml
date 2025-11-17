@@ -11,6 +11,9 @@ requires-python = ">=3.8"
 authors = [
     {name = "Glaemscribe Team"},
 ]
+dependencies = [
+    "pillow>=10.4.0",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=6.0", "pytest-cov>=2.0", "black", "mypy", "flake8"]

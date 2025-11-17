@@ -80,40 +80,26 @@ class Rule:
             self.mode.errors.append(error_msg)
             return
         
-        # Generate all sub-rules
+        # Generate all sub-rules (match JS logic exactly)
         try:
+            # do-while loop: process current state first, then iterate
             while True:
                 # Get all source combinations for current iterator state
                 src_combinations = srccounter.combinations()
                 
-                # Get first destination combination (all should map to same destination)
-                dst_combination = dstcounter.combinations()
-                if dst_combination:
-                    dst_combination = dst_combination[0]
-                else:
-                    dst_combination = []
+                # Get ONE destination combination (all sources map to same destination)
+                dst_combinations = dstcounter.combinations()
+                dst_combination = dst_combinations[0] if dst_combinations else []
                 
-                # Create sub-rules for each source combination
+                # Create sub-rules pairing each source with this destination
                 for src_combination in src_combinations:
                     self.sub_rules.append(SubRule(self, src_combination, dst_combination))
                 
-                # Move to next destination combination
-                if not dstcounter.iterate():
-                    break
-            
-            # Continue iterating through source combinations
-            while srccounter.iterate():
-                src_combinations = srccounter.combinations()
-                dst_combination = dstcounter.combinations()
-                if dst_combination:
-                    dst_combination = dst_combination[0]
-                else:
-                    dst_combination = []
+                # Advance destination iterator
+                dstcounter.iterate()
                 
-                for src_combination in src_combinations:
-                    self.sub_rules.append(SubRule(self, src_combination, dst_combination))
-                
-                if not dstcounter.iterate():
+                # Advance source iterator; if no more sources, stop
+                if not srccounter.iterate():
                     break
                     
         except Exception as e:
