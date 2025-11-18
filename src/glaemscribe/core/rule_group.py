@@ -476,14 +476,14 @@ class RuleGroup:
             source = match.group(1)
             cross = match.group(2)
             target = match.group(3)
-            # Handle variable substitution for cross (JS logic)
-            var_name = match.group(4)
-            if var_name:
-                var_value = self.apply_vars(code_line.line, cross, False)
-                if var_value is None:
-                    self.mode.errors.append(Error(code_line.line, f"Thus, variable {{{var_name}}} could not be declared."))
+            # Handle variable substitution for cross (if it's a variable reference)
+            if cross.startswith('{') and cross.endswith('}'):
+                var_name = cross[1:-1]  # Remove { }
+                if var_name in self.vars:
+                    cross = self.vars[var_name].value
+                else:
+                    self.mode.errors.append(Error(code_line.line, f"Cross schema variable not found: {var_name}"))
                     return
-                cross = var_value
             if cross == "identity":
                 cross = None
             self.finalize_rule(code_line.line, source, target, cross)
@@ -693,7 +693,7 @@ class RuleGroup:
         """Evaluate a conditional expression.
         
         Args:
-            expression: The condition expression (e.g., "implicit_a", "option == VALUE")
+            expression: The condition expression (e.g., "implicit_a", "!split_diphthongs", "option == VALUE")
             trans_options: Current transcription options
         
         Returns:
@@ -701,9 +701,16 @@ class RuleGroup:
         """
         expression = expression.strip()
         
+        # Handle negation operator
+        negated = False
+        if expression.startswith('!'):
+            negated = True
+            expression = expression[1:].strip()
+        
         # Handle simple boolean options
         if expression in trans_options:
-            return str(trans_options[expression]).lower() == 'true'
+            result = str(trans_options[expression]).lower() == 'true'
+            return not result if negated else result
         
         # Handle equality comparisons
         if '==' in expression:
@@ -720,13 +727,15 @@ class RuleGroup:
                 else:
                     actual_value = ''
                 
-                return str(actual_value) == expected_value
+                result = str(actual_value) == expected_value
+                return not result if negated else result
         
         # Handle "true" literal (for else clauses)
         if expression.lower() == 'true':
-            return True
+            return not True if negated else True
         
-        return False
+        # If we can't evaluate the expression, return False (or True if negated)
+        return not False if negated else False
     
     def apply_vars(self, line: int, string: str, allow_unicode_vars: bool = False) -> Optional[str]:
         """Replace all variables in an expression with their values.

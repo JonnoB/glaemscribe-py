@@ -80,7 +80,8 @@ class Fragment:
         else:
             # Handle simple equivalence: h or "YANTA A_TEHTA"
             # This is a single alternative with one or more tokens
-            return [[self._finalize_fragment_leaf(leaf.strip()) for leaf in eq.split()]]
+            # Use split(' ') to preserve empty strings from multiple spaces (matches JS behavior)
+            return [[self._finalize_fragment_leaf(leaf) for leaf in eq.split(' ')]]
     
     def _finalize_fragment_leaf(self, leaf: str) -> str:
         """Process a leaf token.

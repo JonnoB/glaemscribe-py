@@ -188,11 +188,11 @@ class Mode:
             restore_lf = (i < len(lines) - 1)
             
             # Apply preprocessor if available
-            # TODO: Full preprocessor should parse operators from mode file
-            # (e.g., \substitute, \rxsubstitute for normalizing input variants)
-            # For now, just apply lowercasing which is sufficient for basic operation.
-            # Accents are preserved as they're meaningful (á, é, í, ó, ú = long vowels)
-            processed_line = line.lower()
+            if self.pre_processor:
+                processed_line = self.pre_processor.apply(line.lower())
+            else:
+                # Fallback: just apply lowercasing
+                processed_line = line.lower()
             
             # Apply processor
             line_result = self.processor.transcribe(processed_line, debug_context)

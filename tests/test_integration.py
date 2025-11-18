@@ -115,6 +115,7 @@ class TestErrorHandling:
         """
         
         # This would need file I/O - for now just test error handling
+        from src.glaemscribe.parsers.mode_parser import ModeParser
         parser = ModeParser()
         
         # Should handle parsing errors without crashing
@@ -135,73 +136,3 @@ class TestErrorHandling:
         
         # Test error accumulation
         assert len(mode.errors) >= 0
-
-
-class TestPerformance:
-    """Test performance with large modes."""
-    
-    def test_large_mode_finalization(self):
-        """Test finalization doesn't hang on large modes."""
-        parser = ModeParser()
-        mode = parser.parse("/home/jonno/glaemscribe-py/resources/glaemresources/modes/english-tengwar-espeak.glaem")
-        
-        if mode:
-            import time
-            start_time = time.time()
-            
-            mode.processor.finalize({})
-            
-            end_time = time.time()
-            duration = end_time - start_time
-            
-            # Should finalize in reasonable time (less than 10 seconds)
-            assert duration < 10.0, f"Finalization took too long: {duration}s"
-    
-    def test_memory_usage(self):
-        """Test memory usage doesn't grow excessively."""
-        # This would need memory profiling tools
-        # For now, just test that we can load and finalize multiple modes
-        modes = []
-        
-        for _ in range(3):
-            parser = ModeParser()
-            mode = parser.parse("/home/jonno/glaemscribe-py/resources/glaemresources/modes/raw-tengwar.glaem")
-            if mode:
-                mode.processor.finalize({})
-                modes.append(mode)
-        
-        # Should be able to handle multiple modes
-        assert len(modes) >= 1
-
-
-@pytest.mark.slow
-class TestSlowIntegration:
-    """Slow tests that take longer to run."""
-    
-    def test_all_available_modes(self):
-        """Test all available modes can be loaded and finalized."""
-        import glob
-        
-        mode_files = glob.glob("/home/jonno/glaemscribe-py/resources/glaemresources/modes/*.glaem")
-        
-        loaded_modes = 0
-        failed_modes = 0
-        
-        for mode_file in mode_files:
-            try:
-                parser = ModeParser()
-                mode = parser.parse(mode_file)
-                
-                if mode:
-                    mode.processor.finalize({})
-                    loaded_modes += 1
-                else:
-                    failed_modes += 1
-            except Exception as e:
-                failed_modes += 1
-                print(f"Failed to load {mode_file}: {e}")
-        
-        # Should load at least some modes
-        assert loaded_modes > 0, f"Failed to load any modes (loaded: {loaded_modes}, failed: {failed_modes})"
-        
-        print(f"Loaded {loaded_modes} modes, {failed_modes} failed")

@@ -111,7 +111,7 @@ class TestJavaScriptParity:
             
             # Should contain Tengwar characters
             analysis = analyze_transcription(py_result)
-            assert analysis['unicode_pua'] > 0 or analysis['plane14_pua'] > 0
+            assert analysis['char_types']['unicode_pua'] > 0 or analysis['char_types']['plane14_pua'] > 0
     
     def test_structural_parity_with_js(self):
         """Test structural parity with JavaScript implementation."""
@@ -210,7 +210,7 @@ class TestJavaScriptParity:
             assert py_analysis['space_count'] >= expected['min_space_count'], f"Too few spaces: {py_analysis['space_count']} < {expected['min_space_count']}"
             
             # Should contain Tengwar characters
-            assert py_analysis['unicode_pua'] > 0 or py_analysis['plane14_pua'] > 0, "No Tengwar characters found in output"
+            assert py_analysis['char_types']['unicode_pua'] > 0 or py_analysis['char_types']['plane14_pua'] > 0, "No Tengwar characters found in output"
 
 
 class TestRealWorldTranscription:
@@ -241,7 +241,7 @@ class TestRealWorldTranscription:
             analysis = analyze_transcription(result)
             
             # Should contain Tengwar characters
-            assert analysis['unicode_pua'] > 0 or analysis['plane14_pua'] > 0, f"No Tengwar characters in: {result}"
+            assert analysis['char_types']['unicode_pua'] > 0 or analysis['char_types']['plane14_pua'] > 0, f"No Tengwar characters in: {result}"
             
             print(f"✓ {test_case['description']}: '{input_text}' → '{result}' ({len(result)} chars)")
     
@@ -315,7 +315,7 @@ class TestRealWorldTranscription:
         analysis = analyze_transcription(result)
         
         # Should contain plenty of Tengwar characters
-        assert analysis['unicode_pua'] > 10 or analysis['plane14_pua'] > 10, "Large text should contain many Tengwar characters"
+        assert analysis['char_types']['unicode_pua'] > 10 or analysis['char_types']['plane14_pua'] > 10, "Large text should contain many Tengwar characters"
         
         print(f"✓ Large text transcription: {len(large_text)} chars → {len(result)} chars")
 
@@ -341,7 +341,7 @@ class TestTranscriptionQuality:
             
             # Should have reasonable character distribution
             total_chars = len(result)
-            tengwar_chars = analysis['unicode_pua'] + analysis['plane14_pua']
+            tengwar_chars = analysis['char_types']['unicode_pua'] + analysis['char_types']['plane14_pua']
             
             # Most characters should be Tengwar (except spaces)
             if total_chars > 0:

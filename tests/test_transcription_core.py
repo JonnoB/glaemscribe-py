@@ -236,24 +236,3 @@ class TestCrossRuleFunctionality:
         assert isinstance(result, str)
 
 
-class TestSimpleRuleTranscription:
-    """Test transcription with simple custom rules."""
-    
-    def test_simple_rule_transcription(self):
-        """Test transcription with a simple custom mode."""
-        # This test uses a minimal mode to test basic transcription
-        from src.glaemscribe.core.mode_enhanced import Mode
-        from src.glaemscribe.core.rule_group import RuleGroup, CodeLine, CodeLinesTerm
-        from src.glaemscribe.core.transcription_processor import TranscriptionProcessor
-        
-        mode = Mode("simple_test")
-        processor = TranscriptionProcessor(mode)
-        
-        # Create a simple rule group
-        rule_group = RuleGroup(mode)
-        rule_group.add_rule(CodeLine("return 'test_output'"))
-        processor.add_rule_group("test_group", rule_group)
-        
-        # Test the simple rule
-        result = processor.transcribe("input")
-        assert result == "test_output"

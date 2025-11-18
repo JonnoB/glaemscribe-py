@@ -1,31 +1,49 @@
-# Glaemscribe Python
+# Glaemscribe-py
 
-A **Python port** of [Glaemscribe](https://github.com/BenTalagan/glaemscribe) - the transcription engine for converting text between writing systems, specifically designed for J.R.R. Tolkien's invented languages.
+A Python implementation of Glaemscribe for transcribing Tolkien's Elvish languages to Tengwar script using Unicode.
 
-## Project Status
+## Overview
 
-**Production Ready** - 96.1% test pass rate (49/51 tests passing)
+Glaemscribe-py is a Python port focused on transcribing J.R.R. Tolkien's Elvish languages (Quenya and Sindarin) to Tengwar script. Unlike the original JavaScript Glaemscribe which uses font-specific encodings, this implementation outputs **Unicode characters** (Private Use Area) for greater font independence and modern compatibility.
 
-This Python implementation achieves full feature parity with the original Ruby/JavaScript versions while providing a modern, Unicode-based output strategy.
+### Key Features
 
-### Implemented Features
+- ✅ **Quenya transcription** - Full support for Classical Quenya to Tengwar
+- ✅ **Sindarin transcription** - Full support for General Sindarin to Tengwar  
+- ✅ **Unicode output** - Uses Unicode PUA characters (U+E000+) compatible with FreeMonoTengwar font
+- ✅ **PNG rendering** - Built-in support for rendering transcriptions to images
+- ✅ **Preprocessing** - Handles diacritics, substitutions, and special characters
+- ✅ **Extensible architecture** - Mode system supports adding new transcription modes
 
-- Complete transcription engine with Ruby-parity rule processing
-- Virtual character resolution with 2-pass algorithm
-- Sequence expansion and character swaps
-- Unicode normalization for accented characters
-- Font-to-Unicode mapping for Tengwar characters
-- Macro system with argument scoping
-- Cross rules and conditional logic
-- Comprehensive test suite validated against JavaScript implementation
+### What's Different from Original Glaemscribe
+
+- **Unicode-first**: Outputs Unicode characters instead of font-specific encodings
+- **Font independence**: Works with any Unicode Tengwar font (tested with FreeMonoTengwar)
+- **Python native**: Pure Python implementation with modern tooling (uv, pytest)
+- **Focused scope**: Currently supports Elvish languages; architecture ready for expansion
+
+## Supported Languages & Modes
+
+### ✅ Fully Supported
+- **Quenya** - `quenya-tengwar-classical.glaem`
+- **Sindarin** - `sindarin-general.glaem`
+
+### 🚧 Architecture Ready, Implementation Needed
+The core architecture supports all transcription modes from the original Glaemscribe. The following can be added by adapting their mode files to use Unicode charsets:
+
+- **English Tengwar** - Requires eSpeak NG integration for phonemic transcription
+- **Other Tengwar modes** - Mode files exist, need Unicode charset adaptation
+- **Cirth (Runes)** - Mode files exist, need Unicode charset adaptation  
+- **Sarati** - Mode files exist, need Unicode charset adaptation
+- **Other scripts** - Any mode from original Glaemscribe can be ported
+
+The main work for adding new modes is:
+1. Converting charset files from font-specific encoding to Unicode
+2. For phonemic modes (like English), integrating required preprocessing tools
 
 ## About Glaemscribe
 
-Glaemscribe is the definitive transcription engine for Tolkien's languages and writing systems. Originally created by Benjamin Babut (Talagan), it enables accurate transcription between:
-
-- **Languages**: Quenya, Sindarin, English, and more
-- **Writing Systems**: Tengwar, Cirth, and other Tolkien scripts
-- **Charsets**: Multiple font-compatible character sets
+Glaemscribe is the definitive transcription engine for Tolkien's languages and writing systems. Originally created by Benjamin Babut (Talagan), it enables accurate transcription between languages and writing systems.
 
 **Original Project**: [BenTalagan/glaemscribe](https://github.com/BenTalagan/glaemscribe)  
 **Official Site**: [Glaemscrafu](https://glaemscrafu.jrrvf.com/english/glaemscribe.html)
@@ -45,18 +63,44 @@ uv sync
 
 ## Quick Start
 
+### Basic Transcription
+
 ```python
 from src.glaemscribe.parsers.mode_parser import ModeParser
 
-# Load a mode
+# Load a Quenya mode
 parser = ModeParser()
-mode = parser.parse("resources/glaemresources/modes/quenya-tengwar-classical.glaem")
-mode.processor.finalize({})
+mode = parser.parse('resources/glaemresources/modes/quenya-tengwar-classical.glaem')
+mode.finalize({})
 
-# Transcribe text
-success, result, debug = mode.transcribe("Ai ! laurië lantar lassi súrinen ,")
-print(result)
-# Output:       ⸱
+# Transcribe Quenya text
+success, result, debug = mode.transcribe("Elen síla lúmenn' omentielvo")
+if success:
+    print(result)  # Outputs Unicode Tengwar characters (U+E000+ range)
+```
+
+### Rendering to PNG
+
+```python
+from PIL import Image, ImageDraw, ImageFont
+
+# After transcribing (see above)
+font = ImageFont.truetype("src/glaemscribe/fonts/FreeMonoTengwar.ttf", 48)
+img = Image.new('RGB', (800, 100), color='white')
+draw = ImageDraw.Draw(img)
+draw.text((20, 20), result, font=font, fill='black')
+img.save('output.png')
+```
+
+### Example: Namárië Poem
+
+```python
+poem = """Ai ! laurië lantar lassi súrinen ,
+yéni únótimë ve rámar aldaron !
+Yéni ve lintë yuldar avánier"""
+
+success, result, debug = mode.transcribe(poem)
+# Result contains full Tengwar transcription with proper diacritics
 ```
 
 ## Advanced Usage
@@ -92,74 +136,94 @@ print(f"Post-processor output: {debug.postprocessor_output}")
 ```bash
 # Run all tests
 uv run pytest
-
-# Run JavaScript parity tests
-uv run pytest tests/test_js_parity.py -v
-
-# Run virtual character tests
-uv run pytest tests/test_virtual_characters.py -v
 ```
 
-### Rendering smoke test
+## Developer utilities
 
-Render the same sample text as the Rust bindings using the bundled CSUR font (via the `tengwar` package) for visual comparison:
+Helper scripts live under `scripts/` and are intended to be run as modules from the project root (so imports like `from src.glaemscribe...` work correctly).
+
+### Render Namárië poem
+
+Render the canonical Namárië transcription to PNGs in the `data/` directory:
 
 ```bash
-uv run python scripts/render_smoke.py --output glaemscribe_sample.png
+uv run python -m scripts.render_poem
 ```
 
-## Validation
+Outputs:
 
-This implementation has been validated against the JavaScript reference:
+- `data/namarie_poem_transcription.png` – original lines + Tengwar
+- `data/namarie_poem_tengwar_only.png` – Tengwar-only version
 
-- **Structural equivalence**: Same token sequences and word boundaries
-- **Feature parity**: All virtual characters, sequences, and swaps work identically
-- **Unicode compliance**: Modern Unicode PUA output (vs. font-specific encoding)
+### English Ring Verse experiment (phonemic mode)
 
-See [VALIDATION_SUMMARY.md](VALIDATION_SUMMARY.md) for detailed comparison.
+Experimental English Tengwar transcription of the Ring Verse (requires the phonemic `english-tengwar-espeak` mode; accuracy depends on future eSpeak NG integration):
 
-## Output Encoding
-
-### Python Implementation (Unicode PUA)
-```python
-result = mode.transcribe("aiya")
-# Output: ?  # Unicode Private Use Area characters
+```bash
+uv run python -m scripts.test_english_ring_verse
 ```
 
-### Original Implementation (Font Codes)
+Output:
+
+- `data/ring_verse_english_tengwar.png`
+
+### Debug transcription tree for "Ai ! laurië ..."
+
+Build the Python transcription decision tree for debugging:
+
+```bash
+uv run python -m scripts.test_ai_lauri
 ```
-Input:  "aiya"
-Output: "lEhÍE"  # Font-specific character codes
+
+This writes:
+
+- `data/debug_tree_ai_lauri_python.json`
+
+If you also place the JavaScript reference tree as:
+
+- `data/debug_tree_ai_lauri_js.json`
+
+you can compare them with:
+
+```bash
+uv run python -m scripts.compare_ai_lauri_trees
 ```
 
-Both are functionally correct - the Python version uses modern Unicode for better portability.
+which produces:
 
-## Project Structure
+- `data/debug_tree_ai_lauri_diff.txt`
 
+### Unicode / Tengwar validation CLI
+
+Validate a piece of text or a transcription result:
+
+```bash
+uv run python -m scripts.validate_unicode "some text"
+uv run python -m scripts.validate_unicode --mode quenya-tengwar-classical "Elen síla lúmenn' omentielvo"
 ```
-src/glaemscribe/
-├── core/                    # Core transcription engine
-│   ├── mode_enhanced.py     # Enhanced mode implementation
-│   ├── transcription_processor.py
-│   └── post_processor/      # Post-processing operators
-├── parsers/                 # File format parsers
-│   ├── mode_parser.py
-│   ├── charset_parser.py
-│   └── tengwar_font_mapping.py
-└── api/                     # Public API
 
-resources/glaemresources/    # Mode and charset files
-tests/                       # Comprehensive test suite
+You can also list available modes:
+
+```bash
+uv run python -m scripts.validate_unicode --list-modes "dummy"
 ```
 
 ## Contributing
 
-This is a port of the original Glaemscribe project. When contributing:
+Contributions are welcome! When contributing:
 
-1. **Maintain compatibility** with original Ruby/JS behavior
+1. **Maintain compatibility** with original Glaemscribe behavior
 2. **Add tests** for new features
-3. **Follow the existing** code style and patterns
+3. **Follow existing** code style and patterns
 4. **Update documentation** as needed
+
+### Adding New Modes
+
+To add a new transcription mode:
+1. Convert the charset file from font-specific encoding to Unicode (FreeMonoTengwar)
+2. Update the mode file to reference the Unicode charset
+3. Add tests to verify transcription accuracy
+4. For phonemic modes, integrate required preprocessing tools (e.g., eSpeak NG)
 
 ## License
 
@@ -168,11 +232,8 @@ This port follows the same license as the original Glaemscribe project (GNU Affe
 ## Acknowledgments
 
 - **Benjamin Babut (Talagan)** - Original creator of Glaemscribe
-- **Tolkien Community** - For the decades of linguistic research
-- **Glaemscrafu** - Official Glaemscribe website and resources
+- **The Tengwar and Quenya community** - For supporting the creation of the original Glaemscribe  
 
 ---
 
 **Original Implementation**: [Ruby/JavaScript](https://github.com/BenTalagan/glaemscribe)  
-**Python Port**: [This repository](https://github.com/JonnoB/glaemscribe-py)  
-**Official Documentation**: [Glaemscrafu](https://glaemscrafu.jrrvf.com/english/glaemscribe.html)

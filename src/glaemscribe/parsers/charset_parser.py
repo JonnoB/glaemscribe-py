@@ -26,13 +26,18 @@ class Char:
     
     def __post_init__(self):
         """Convert code point to Unicode character using font mapping."""
-        # Unicode PUA codes (>= 0xE000) are direct Unicode mappings
-        # Legacy font codes (< 0xE000) need font mapping conversion
-        if self.code >= 0xE000:
-            # Direct Unicode mapping for Unicode-native charsets (like FreeMono)
+        # Check if this is a Unicode-native charset (like FreeMonoTengwar)
+        # by checking the charset name if available
+        is_unicode_charset = False
+        if hasattr(self.charset, 'charset') and self.charset.charset:
+            is_unicode_charset = 'freemono' in self.charset.charset.name.lower()
+        
+        if self.code >= 0xE000 or is_unicode_charset:
+            # Direct Unicode mapping for Unicode-native charsets
+            # or for codes in the Private Use Area
             self.str_value = chr(self.code)
         else:
-            # Use font mapping for legacy font-specific character codes
+            # Use font mapping for legacy font-specific character codes (DS fonts)
             self.str_value = map_font_code_to_unicode(self.code)
 
 

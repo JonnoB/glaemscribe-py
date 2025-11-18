@@ -16,6 +16,8 @@ from ..core.charset import Charset
 from .charset_parser import CharsetParser
 from ..core.rule_group import RuleGroup, CodeLine, CodeBlock, CodeLinesTerm
 from ..core.transcription_processor import TranscriptionProcessor
+from ..core.post_processor.base import TranscriptionPreProcessor
+from ..core.pre_processor_operators import SubstitutePreProcessorOperator, RxSubstitutePreProcessorOperator
 
 
 class ModeParser:
@@ -191,18 +193,55 @@ class ModeParser:
             self.mode.warnings.append(Error(0, "No default charset defined!!"))
     
     def _extract_preprocessor(self, doc: Document):
-        """Extract preprocessor rules.
+        """Extract preprocessor operators."""
+        # Create the preprocessor
+        self.mode.pre_processor = TranscriptionPreProcessor(self.mode)
         
-        TODO: Full implementation should parse all preprocessor operators
-        from the mode file and create operator instances. For now, we just
-        ensure the preprocessor exists but don't populate it with operators.
-        The mode_enhanced.py applies basic lowercasing which is sufficient
-        for most Quenya/Sindarin modes.
-        """
         preprocessor_nodes = doc.root_node.gpath("preprocessor")
-        # Preprocessor operators like \downcase, \substitute, \rxsubstitute
-        # should be parsed here and added to self.mode.pre_processor.operators
-        # This requires implementing PreProcessorOperator subclasses for each type
+        if not preprocessor_nodes:
+            return
+        
+        preprocessor_node = preprocessor_nodes[0]
+        
+        # Process each element in the preprocessor block
+        for child in preprocessor_node.children:
+            if child.name == "substitute":
+                # Create substitute operator
+                operator = SubstitutePreProcessorOperator(self.mode, child)
+                self.mode.pre_processor.operators.append(operator)
+            
+            elif child.name == "rxsubstitute":
+                # Create regex substitute operator
+                operator = RxSubstitutePreProcessorOperator(self.mode, child)
+                self.mode.pre_processor.operators.append(operator)
+            
+            elif child.is_text():
+                # Handle inline text commands (fallback)
+                line = child.args[0].strip()
+                if line.startswith('\\substitute '):
+                    parts = line.split(None, 2)
+                    if len(parts) == 3:
+                        # Create a fake node for the operator
+                        fake_node = Node(child.line, "substitute", "substitute")
+                        fake_node.args = [parts[1], parts[2]]
+                        operator = SubstitutePreProcessorOperator(self.mode, fake_node)
+                        self.mode.pre_processor.operators.append(operator)
+                
+                elif line.startswith('\\rxsubstitute '):
+                    parts = line.split(None, 2)
+                    if len(parts) == 3:
+                        pattern = parts[1]
+                        replacement = parts[2]
+                        # Remove quotes if present
+                        if pattern.startswith('"') and pattern.endswith('"'):
+                            pattern = pattern[1:-1]
+                        if replacement.startswith('"') and replacement.endswith('"'):
+                            replacement = replacement[1:-1]
+                        # Create a fake node for the operator
+                        fake_node = Node(child.line, "rxsubstitute", "rxsubstitute")
+                        fake_node.args = [pattern, replacement]
+                        operator = RxSubstitutePreProcessorOperator(self.mode, fake_node)
+                        self.mode.pre_processor.operators.append(operator)
     
     def _extract_processor_rules(self, doc: Document):
         """Extract processor rules."""

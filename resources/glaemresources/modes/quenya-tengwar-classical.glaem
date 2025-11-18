@@ -66,7 +66,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 \world      arda
 \invention  jrrt
 
-\charset  tengwar_ds_sindarin true
+\charset  tengwar_ds_sindarin false
 \charset  tengwar_ds_parmaite false
 \charset  tengwar_ds_eldamar  false
 \charset  tengwar_ds_annatar  false
@@ -78,8 +78,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 \charset  tengwar_guni_annatar  false
 \charset  tengwar_guni_elfica   false
 
-\charset  tengwar_freemono    false
+\charset  tengwar_freemono    true
 \charset  tengwar_telcontar   false
+
+\** NOTE: FreeMonoTengwar is set as the default charset because it uses
+   Unicode PUA characters (U+E000+) which are compatible with modern
+   Unicode Tengwar fonts. The original DS charsets use font-specific
+   encodings that require custom fonts. **\
 
 \raw_mode "raw-tengwar"
 
@@ -510,6 +515,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     
     \** NBSP **\
     {NBSP} --> NBSP
+    \xa0 --> NBSP
     
     \** Quotes **\
 

@@ -84,8 +84,8 @@ def tengwar_guni_quenya_charset(charset_parser):
 
 @pytest.fixture(scope="session")
 def cirth_daeron_charset(charset_parser):
-    """Pre-parsed Cirth Daeron charset."""
-    return charset_parser.parse('resources/glaemresources/charsets/cirth_daeron.cst')
+    """Pre-parsed Cirth DS charset."""
+    return charset_parser.parse('resources/glaemresources/charsets/cirth_ds.cst')
 
 
 @pytest.fixture(scope="session")
