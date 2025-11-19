@@ -178,4 +178,4 @@ This port follows the same license as the original Glaemscribe project (GNU Affe
 
 ---
 
-**Original Implementation**: [Ruby/JavaScript](https://github.com/BenTalagan/glaemscribe)  
+**Original Implementation**: [Glaemscribe repo](https://github.com/BenTalagan/glaemscribe)  
