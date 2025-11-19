@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""Dump the transcription processor tree to JSON for cross-implementation diffing."""
+"""Dump the Quenya Tengwar transcription processor tree to JSON.
+
+This module exports the internal transcription tree structure from Glaemscribe's
+Quenya-Tengwar classical mode to a JSON file. The output is formatted for
+cross-implementation comparison and debugging purposes.
+
+The exported JSON contains the complete hierarchical node structure with
+metadata including character mappings, replacement rules, effective status,
+and child node counts, suitable for diffing against JavaScript or other
+implementations.
+
+"""
 
 from __future__ import annotations
 

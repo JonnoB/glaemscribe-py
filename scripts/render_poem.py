@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
-"""Render the Namárië poem as a PNG image using Tengwar Unicode characters."""
+"""Render the Namárië poem as PNG images using Tengwar Unicode characters.
+
+This module provides functionality to transcribe and visualize Galadriel's Lament
+(Namárië) in Tengwar script using multiple Unicode Tengwar fonts. It generates
+PNG images with both the original text and Tengwar transcription, as well as
+Tengwar-only versions.
+
+The module uses Glaemscribe for Tengwar transcription and PIL for image
+rendering. Output images are saved to the data directory with appropriate
+labeling for each font variant used.
+
+Typical usage example:
+    python script.py
+"""
 
 import json
 import os

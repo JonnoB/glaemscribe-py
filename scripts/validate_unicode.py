@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-"""
-Unicode validation tool for Glaemscribe transcriptions.
+"""Command-line helper for auditing Glaemscribe Unicode output.
+
+The script can validate raw Tengwar strings or first transcribe plain text via a
+specified .glaem mode. It prints Unicode and Tengwar-specific diagnostics,
+including errors, warnings, and character breakdowns, making it handy for
+spot-checking inputs outside the automated test suite.
 
 Usage:
     python validate_unicode.py "text to validate"
@@ -14,7 +18,26 @@ from src.glaemscribe.parsers.mode_parser import ModeParser
 
 
 def validate_text(text: str, mode_name: str = None) -> bool:
-    """Validate text with optional mode-specific validation."""
+    """Validate Unicode and Tengwar rules for a given transcription.
+
+    Args:
+        text: The Unicode string to inspect (plain Tengwar or transliteration).
+        mode_name: Optional .glaem mode identifier for logging context when the
+            text came from a specific transcription workflow.
+
+    Returns:
+        bool: ``True`` when both the general Unicode and Tengwar-specific
+        validators find no blocking errors, otherwise ``False``.
+
+    Example:
+        >>> validate_text("Elen síla lúmenn' omentielvo")
+        Validating text: "Elen síla lúmenn' omentielvo"
+        ...
+
+    The function prints a human-readable breakdown of Unicode errors/warnings,
+    Tengwar-specific issues, and a character-type histogram so you can quickly
+    audit ad-hoc strings outside the automated test suite.
+    """
     unicode_validator = UnicodeValidator()
     tengwar_validator = TengwarValidator()
     

@@ -1,3 +1,23 @@
+"""Transcribe and render the Ring Verse in English Tengwar script.
+
+
+N.B. English-Tengwar mode is not yet implemented!
+
+This module demonstrates Tengwar transcription of Tolkien's Ring Verse using
+the English Tengwar mode with eSpeak phonetic analysis. The transcribed text
+is rendered as a PNG image using a Tengwar Unicode font.
+
+The module performs the following steps:
+    1. Loads the English-Tengwar-eSpeak mode from Glaemscribe
+    2. Validates the mode with a test word
+    3. Transcribes the complete Ring Verse to Tengwar Unicode characters
+    4. Renders the result as a PNG image with proper line wrapping and layout
+
+Typical usage:
+    python script.py
+"""
+
+
 #!/usr/bin/env python3
 """Test English Tengwar transcription with the Ring Verse."""
 

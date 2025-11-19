@@ -1,3 +1,17 @@
+"""Export the Quenya Tengwar transcription tree as a JSON debug file.
+
+This module parses the Quenya-Tengwar classical mode using Glaemscribe and
+exports the internal transcription tree structure to a JSON file for debugging
+and analysis purposes.
+
+The exported JSON contains the complete node hierarchy with metadata including
+character mappings, replacement rules, effective status, and child node counts.
+
+Typical usage:
+    python script.py
+"""
+
+
 from src.glaemscribe.parsers.mode_parser import ModeParser
 import json
 import os
