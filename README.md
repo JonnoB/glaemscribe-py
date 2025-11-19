@@ -19,15 +19,43 @@ This library outputs Unicode Tengwar (PUA) and can be used with any Unicode Teng
 
 The repository includes a small, curated set of Unicode Tengwar fonts, all under the SIL Open Font License (OFL):
 
-- **FreeMonoTengwar** – baseline font used during development
-- **AlcarinTengwar-Regular** – Unicode Tengwar font
-- **AlcarinTengwar-Bold** – bold companion font
+- **FreeMonoTengwar** – [baseline font](https://freetengwar.sourceforge.net/freemonotengwar.html) used during development
+- **AlcarinTengwar-Regular** – Unicode Tengwar font by [Toshi Omagari](https://github.com/Tosche/Alcarin-Tengwar)
+- **AlcarinTengwar-Bold** – Bold companion font by [Toshi Omagari](https://github.com/Tosche/Alcarin-Tengwar)
 
 These fonts live under `src/glaemscribe/fonts/` and are suitable for most uses. See the respective licence files alongside the fonts for details.
 
 ### Other fonts
 
 You can also use any other Unicode Tengwar font (for example, Unicode-mapped versions of classic fonts such as Tengwar Annatar). These fonts are **not** bundled with `glaemscribe-py`; you must obtain them from their original sources and follow their licences.
+
+### Using custom fonts
+
+If you have a TTF font file (like `MyTengwar.ttf`) that you want to use for rendering:
+
+**Option 1: Using the `TengwarRenderer` class (programmatic)**
+
+```python
+from glaemscribe import transcribe
+from glaemscribe.render import TengwarRenderer
+
+# Transcribe text to Unicode Tengwar
+tengwar_text = transcribe("Elen síla lúmenn' omentielvo", mode="quenya")
+
+# Render with custom font
+renderer = TengwarRenderer(font_path="fonts/MyTengwar.ttf", font_size=48)
+renderer.render_to_file(tengwar_text, "output.png")
+```
+
+**Option 2: Using the `render_text.py` script (command-line)**
+
+```bash
+# Pass the path to your font file
+uv run scripts/render_text.py "Elen síla" --font fonts/MyTengwar.ttf --output output.png
+
+# Or use it with custom modes
+uv run scripts/render_text.py "mellon" --mode sindarin --font fonts/MyTengwar.ttf
+```
 
 ## Supported languages & modes
 
@@ -118,8 +146,8 @@ The `scripts/` directory contains several useful examples:
 
 Example:
 ```bash
-python scripts/simple_usage.py
-python scripts/render_text.py "Elen síla" --mode quenya --output output.png
+uv run scripts/simple_usage.py
+uv run scripts/render_text.py "Elen síla" --mode quenya --output output.png
 ```
 
 ## Contributing
