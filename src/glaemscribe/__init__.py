@@ -46,7 +46,6 @@ Simple API (recommended for 95% of users):
 Advanced API (for custom modes/charsets):
     For power users who need full control over modes and charsets:
     
-    >>> from glaemscribe import Glaemscribe
     >>> from glaemscribe.parsers import ModeParser
     >>> from glaemscribe.resources import get_mode_path
     >>> 
@@ -87,9 +86,6 @@ __version__ = "0.1.0"
 # Simple functional API (recommended for most users)
 from .api import transcribe, transcribe_detailed, list_modes, clear_cache
 
-# Advanced/legacy class-based API
-from .api import Glaemscribe
-
 # Core classes (for advanced usage)
 from .core import Charset, Mode, TranscriptionRule
 
@@ -100,7 +96,6 @@ __all__ = [
     "list_modes",
     "clear_cache",
     # Advanced API
-    "Glaemscribe",
     "Charset",
     "Mode",
     "TranscriptionRule",

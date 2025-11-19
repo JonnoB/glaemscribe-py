@@ -46,12 +46,16 @@ The easiest way to use Glaemscribe is with the high-level `transcribe()` functio
 from glaemscribe import transcribe, list_modes
 
 # Simple Quenya transcription
-result = transcribe("Elen síla lúmenn' omentielvo", mode="quenya")
-print(result)  # Unicode Tengwar (PUA, U+E000+)
+quenya_text = transcribe("Elen síla lúmenn' omentielvo", mode="quenya")
+renderer = TengwarRenderer()
+renderer.render_to_file(quenya_text, "quenya_text.png")
+print(quenya_text)
 
 # Sindarin transcription
-result = transcribe("mellon", mode="sindarin")
-print(result)
+sindarin_text = transcribe("Ai na vedui Dúnadan !", mode="sindarin")
+# For other tengwar fonts simply pass in the path to the ttf or otf file
+renderer_alcarin = TengwarRenderer(font_name='alcarin-bold', font_size=36)
+renderer_alcarin.render_to_file(sindarin_text, "sindarin_text.png")
 
 # List available modes
 modes = list_modes()
@@ -81,22 +85,6 @@ mode.processor.finalize({})
 success, result, debug = mode.transcribe("Elen síla lúmenn' omentielvo")
 if success:
     print(result)
-```
-
-### Using custom fonts
-
-If you have a Tengwar TTF font file (e.g. `MyTengwar.ttf`) that you want to use for rendering you can using the `TengwarRenderer` class.
-
-```python
-from glaemscribe import transcribe
-from glaemscribe.render import TengwarRenderer
-
-# Transcribe text to Unicode Tengwar
-tengwar_text = transcribe("Elen síla lúmenn' omentielvo", mode="quenya")
-
-# Render with custom font
-renderer = TengwarRenderer(font_path="fonts/MyTengwar.ttf", font_size=48)
-renderer.render_to_file(tengwar_text, "output.png")
 ```
 
 
