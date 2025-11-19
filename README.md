@@ -14,15 +14,7 @@ Glaemscribe-py is a Python port of the original [Glaemscribe](https://github.com
 ## Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/JonnoB/glaemscribe-py.git
-cd glaemscribe-py
-
-# Install library (runtime only)
-pip install -e .
-
-# For development (tests, formatting, etc.)
-pip install -e .[dev]
+ pip install glaemscribe
 ```
 
 ## Fonts
