@@ -1,0 +1,50 @@
+[
+  {
+    "mode": "sindarin-tengwar-general_use",
+    "description": "Sindarin phrase line 1 (Sindarin Tengwar - General Use)",
+    "line": "Ai na vedui Dúnadan !",
+    "output": "    "
+  },
+  {
+    "mode": "sindarin-tengwar-general_use",
+    "description": "Sindarin phrase line 2 (Sindarin Tengwar - General Use)",
+    "line": "Mae govannen !",
+    "output": "  "
+  },
+  {
+    "mode": "sindarin-tengwar-general_use",
+    "description": "Sindarin phrase line 3 (Sindarin Tengwar - General Use)",
+    "line": "Ennyn Durin aran Moria: pedo mellon a minno!",
+    "output": "   ⸱    "
+  },
+  {
+    "mode": "sindarin-tengwar-general_use",
+    "description": "Sindarin phrase line 4 (Sindarin Tengwar - General Use)",
+    "line": "Im Narvi hain echant. Celebrimbor o Eregion teithant i thiw hin.",
+    "output": "   :       :"
+  },
+  {
+    "mode": "sindarin-tengwar-beleriand",
+    "description": "Sindarin phrase line 1 (Sindarin Tengwar - Beleriand)",
+    "line": "Ai na vedui Dúnadan !",
+    "output": "    "
+  },
+  {
+    "mode": "sindarin-tengwar-beleriand",
+    "description": "Sindarin phrase line 2 (Sindarin Tengwar - Beleriand)",
+    "line": "Mae govannen !",
+    "output": "  "
+  },
+  {
+    "mode": "sindarin-tengwar-beleriand",
+    "description": "Sindarin phrase line 3 (Sindarin Tengwar - Beleriand)",
+    "line": "Ennyn Durin aran Moria: pedo mellon a minno!",
+    "output": "   ⸱    "
+  },
+  {
+    "mode": "sindarin-tengwar-beleriand",
+    "description": "Sindarin phrase line 4 (Sindarin Tengwar - Beleriand)",
+    "line": "Im Narvi hain echant. Celebrimbor o Eregion teithant i thiw hin.",
+    "output": "   :       :"
+  }
+]

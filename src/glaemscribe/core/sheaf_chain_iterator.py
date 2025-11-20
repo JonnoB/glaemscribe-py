@@ -137,12 +137,25 @@ class SheafChainIterator:
         Returns:
             List of combinations (each combination is a list of strings)
         """
-        # Build fragments array applying cross permutation
-        # The cross_array determines which sheaf position maps to which fragment
+        # Build fragments array in the natural sheaf order.
+        #
+        # In the original JS implementation, combinations() iterates over
+        # sheaves in index order and uses the current iterator value for
+        # that same index. The cross_array permutation is only applied in
+        # iterate(), which controls how iterators advance, not how
+        # fragments are ordered in the resulting combination.
+        #
+        # Our previous port incorrectly applied cross_array here as well,
+        # which changed the relative ordering of destination tokens for
+        # cross-schema rules like "2,1". That caused Tengwar tokens such
+        # as tehtar and their host tengwar to appear in reversed order
+        # compared to the JS/Ruby implementation.
+        #
+        # To match JS behavior, we resolve fragments purely by sheaf index
+        # and let cross_array affect only iterator progression.
         resolved = []
-        for pos, sheaf_index in enumerate(self.cross_array):
-            sheaf = self.sheaf_chain.sheaves[sheaf_index]
-            fragment_index = self.iterators[sheaf_index]
+        for idx, sheaf in enumerate(self.sheaf_chain.sheaves):
+            fragment_index = self.iterators[idx]
             fragment = sheaf.fragments[fragment_index]
             resolved.append(fragment.combinations)
         
