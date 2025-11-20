@@ -78,8 +78,6 @@ Thumbs.db
 *.log
 
 
-*.png
-
 data/
 *.lock
 *.ipynb
